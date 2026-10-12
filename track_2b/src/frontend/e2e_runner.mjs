@@ -61,9 +61,10 @@ async function runE2ESuite() {
   console.log('3. Testing Safety Gate: Verifying approval is blocked when conflicts remain...');
   const signBtn = await page.locator('button:has-text("Sign & Approve Brief")');
   const isDisabled = await signBtn.isDisabled();
-  if (isDisabled) {
-    console.log('✓ Safety Gate Passed: "Sign & Approve Brief" button is disabled while conflicts remain.');
+  if (!isDisabled) {
+    throw new Error('SAFETY GATE VIOLATION: "Sign & Approve Brief" button MUST be disabled while conflicts remain!');
   }
+  console.log('✓ Safety Gate Passed: "Sign & Approve Brief" button is strictly disabled while conflicts remain.');
 
   // 5. Operator Resolves Contradiction
   console.log('4. Operator resolving contradiction: Confirming North Portal fact...');
@@ -91,17 +92,15 @@ async function runE2ESuite() {
   await page.screenshot({ path: approvedPath, fullPage: false });
 
   // 7. Test Axe Accessibility Scan
-  console.log('6. Running Axe automated accessibility scan...');
-  const axeResults = await new AxeBuilder({ page })
-    .disableRules(['color-contrast']) // We check our tactical dark palette independently
-    .analyze();
+  console.log('6. Running Axe automated accessibility scan (including color contrast)...');
+  const axeResults = await new AxeBuilder({ page }).analyze();
 
   const seriousViolations = axeResults.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   if (seriousViolations.length > 0) {
     console.error('Axe accessibility violations detected:', JSON.stringify(seriousViolations, null, 2));
     throw new Error(`Axe accessibility violations found: ${seriousViolations.length}`);
   }
-  console.log(`✓ Axe Accessibility Check: No automatically detected serious Axe violations (${axeResults.passes.length} rules passed).`);
+  console.log(`✓ Axe Accessibility Check: No automatically detected serious Axe violations (${axeResults.passes.length} rules passed, 0 serious/critical violations).`);
 
   // 8. Test All Responsive Viewports for Horizontal Overflow
   console.log('7. Testing responsive viewports for horizontal overflow...');
