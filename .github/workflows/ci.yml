@@ -161,10 +161,12 @@ jobs:
         run: |
           echo "1. Checking presets endpoint:"
           curl -f http://localhost:8000/api/presets
-          echo -e "\n2. Triggering incident processing workflow:"
+          echo -e "\n2. Triggering incident processing workflow via REST:"
+          curl -f -X POST http://localhost:8000/api/incidents/INC-2026-CH-01/process
+          echo -e "\n3. Triggering preset shortcut endpoint:"
           curl -f -X POST http://localhost:8000/api/process \
             -H "Content-Type: application/json" \
-            -d '{"preset_id": "preset_alpine_tunnel"}'
+            -d '{"preset_id": "alpine_tunnel_smoke"}'
 
       - name: Shutdown Container
         working-directory: track_2b

@@ -5,10 +5,10 @@ Hardened endpoints with strict CORS, lifespan management, and safety gates.
 """
 
 import os
-from typing import List, Dict
+from typing import List, Dict, Any
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -204,6 +204,18 @@ async def process_incident_pipeline(incident_id: str):
         return inc
     except LiveEndpointError as exc:
         raise HTTPException(status_code=502, detail=f"Apertus live endpoint error: {str(exc)}")
+
+
+@app.post("/api/process", response_model=Incident)
+async def process_preset_workflow(payload: Dict[str, Any] = Body(default={})):
+    """Convenience endpoint to trigger pipeline for a preset or default incident."""
+    preset_id = payload.get("preset_id", "preset_alpine_tunnel")
+    target_id = "INC-2026-CH-01"
+    for inc in incidents_db.values():
+        if inc.preset_id in (preset_id, "alpine_tunnel_smoke"):
+            target_id = inc.incident_id
+            break
+    return await process_incident_pipeline(target_id)
 
 
 @app.post("/api/incidents/{incident_id}/operator-action", response_model=Incident)
