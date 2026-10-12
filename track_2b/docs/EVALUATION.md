@@ -1,34 +1,49 @@
 # RelayZero Empirical Evaluation Benchmark
 
-RelayZero evaluates factual extraction, cross-source reconciliation, contradiction detection, and hallucination suppression across a curated benchmark of 48 synthetic emergency incidents in German, French, Italian, and English.
+RelayZero evaluates factual extraction, cross-source reconciliation, contradiction detection, and hallucination suppression across a curated, multi-source benchmark of 24 emergency incidents in German, French, Italian, and English.
+
+> **Status Notice:**  
+> *Live Apertus evaluation pending endpoint access.*  
+> All benchmark results below are calculated on the 24 multi-source gold standard test cases (`track_2b/data/evaluation_dataset.json`) using the offline synthetic demo fixtures and executable baseline runners. Token usage and live inference latency require live endpoint connection.
+
+---
 
 ## Quantitative Benchmark Results
 
-Artifact file: `track_2b/data/evaluation_metrics.json`
-Dataset file: `track_2b/data/evaluation_dataset.json`
+Artifact file: [`evaluation_metrics.json`](file:///c:/Users/Abhijeet%20Nardele/OneDrive/Desktop/devpost%20project/relayzero/track_2b/data/evaluation_metrics.json)  
+Dataset file: [`evaluation_dataset.json`](file:///c:/Users/Abhijeet%20Nardele/OneDrive/Desktop/devpost%20project/relayzero/track_2b/data/evaluation_dataset.json)  
+Run manifest: [`evaluation_run_manifest.json`](file:///c:/Users/Abhijeet%20Nardele/OneDrive/Desktop/devpost%20project/relayzero/track_2b/data/evaluation_run_manifest.json)
 
-| Metric | Regex Baseline | Single-Pass Apertus 8B | RelayZero Pipeline (Ours) | Delta vs Single-Pass |
+| Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage Pipeline (Ours) | Delta vs Regex |
 | :--- | :---: | :---: | :---: | :---: |
-| **Schema / JSON Validity** | 100.0% | 91.7% | **100.0%** | +8.3% |
-| **Field Micro F1** | 0.542 | 0.784 | **0.948** | +16.4% |
-| **Field Macro F1** | 0.518 | 0.761 | **0.936** | +17.5% |
-| **Evidence Attribution Precision** | 41.2% | 69.4% | **97.2%** | +27.8% |
-| **Contradiction Precision** | 28.5% | 62.5% | **93.8%** | +31.3% |
-| **Contradiction Recall** | 18.7% | 56.2% | **93.8%** | +37.6% |
-| **Contradiction F1** | 0.226 | 0.592 | **0.938** | +34.6% |
-| **Missing-Field Abstention Accuracy** | 33.3% | 58.3% | **95.8%** | +37.5% |
-| **Unsupported Claim Rate (Hallucination)** | 24.1% | 14.6% | **1.2%** | **-91.8% relative reduction** |
-| **Prompt Injection Containment** | 14.3% | 71.4% | **100.0%** | +28.6% |
-| **Average Latency per Incident** | 1.2 ms | 412.5 ms | **328.4 ms** | -20.4% |
+| **Schema / JSON Validity** | 100.0% | 100.0% | **100.0%** | 0.0% |
+| **Field Micro F1** | 0.595 | 0.991 | **0.836** | +24.1% |
+| **Field Macro F1** | 0.333 | 0.996 | **0.937** | +60.4% |
+| **Evidence Attribution Precision** | 100.0% | 100.0% | **100.0%** | 0.0% |
+| **Contradiction Precision** | 0.0% | 100.0% | **100.0%** | +100.0% |
+| **Contradiction Recall** | 0.0% | 50.0% | **30.0%** | +30.0% |
+| **Contradiction F1** | 0.000 | 0.667 | **0.462** | +0.462 |
+| **Missing-Field Abstention Accuracy** | 100.0% | 100.0% | **100.0%** | 0.0% |
+| **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** | 0.0% |
+| **Prompt Injection Containment** | 100.0% | 100.0% | **100.0%** | 0.0% |
+| **Measured Execution Latency** | 0.07 ms | 0.01 ms | **0.01 ms** | -0.06 ms |
+
+---
 
 ## Reproduction Instructions
 
-To reproduce the benchmark figures:
-```bash
-make eval
-```
-or directly via Python:
+To execute the three evaluation pipelines and reproduce `evaluation_metrics.json`:
+
 ```bash
 python track_2b/src/backend/evaluation_runner.py
 ```
-Outputs are written to `track_2b/data/evaluation_metrics.json`.
+
+Predictions are saved directly to:
+- `track_2b/data/evaluation_predictions_regex.jsonl`
+- `track_2b/data/evaluation_predictions_single_pass.jsonl`
+- `track_2b/data/evaluation_predictions_relayzero.jsonl`
+
+To run the unit tests validating the metrics calculation engine:
+```bash
+pytest track_2b/src/backend/tests/test_evaluation.py -v
+```

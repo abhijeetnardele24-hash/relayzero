@@ -23,10 +23,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r track_2b/src/backend/requirements.txt
 
-      - name: Run Backend Pytest & Egress Zero Suite
+      - name: Run Backend Pytest & Egress Suite
         run: |
           export PYTHONPATH=.
-          pytest track_2b/src/backend/tests -v -o asyncio_mode=auto --cov=track_2b/src/backend --cov-report=term
+          pytest track_2b/src/backend/tests -v -o asyncio_mode=auto --cov=track_2b/src/backend --cov-report=term --cov-fail-under=85
 
       - name: Run Evaluation Benchmark
         run: |
@@ -51,6 +51,10 @@ jobs:
       - name: Install Frontend Dependencies
         working-directory: track_2b/src/frontend
         run: npm ci
+
+      - name: Lint Frontend
+        working-directory: track_2b/src/frontend
+        run: npm run lint
 
       - name: Typecheck and Build Frontend
         working-directory: track_2b/src/frontend
