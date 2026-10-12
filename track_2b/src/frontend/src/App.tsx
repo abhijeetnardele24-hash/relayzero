@@ -12,12 +12,19 @@ import {
   Lock,
   Edit2,
   XCircle,
+  AlertCircle,
 } from 'lucide-react';
+
+interface EvidenceSpan {
+  exact_quote: string;
+  start_char: number;
+  end_char: number;
+}
 
 interface SourceReport {
   report_id: string;
   incident_id: string;
-  modality: 'text' | 'image_document' | 'voice_audio';
+  modality: 'text' | 'document_transcript' | 'voice_transcript';
   language: 'de' | 'fr' | 'it' | 'en' | 'und';
   author_role: string;
   received_at: string;
@@ -34,11 +41,11 @@ interface ExtractedClaim {
   field: string;
   normalized_value: string;
   original_value: string;
-  evidence_pointer: string;
+  evidence_span: EvidenceSpan;
   language: string;
-  confidence: number;
+  confidence: number | null;
   extraction_status: string;
-  operator_status: 'unreviewed' | 'confirmed' | 'edited' | 'rejected';
+  operator_status: 'unreviewed' | 'operator_confirmed' | 'edited' | 'rejected';
   operator_edited_value?: string;
   model_name: string;
   timestamp: string;
@@ -47,7 +54,7 @@ interface ExtractedClaim {
 interface ClaimCluster {
   cluster_id: string;
   field: string;
-  status: 'corroborated' | 'conflict' | 'single_source' | 'missing';
+  status: 'corroborated' | 'single_source_unverified' | 'conflicting' | 'missing' | 'operator_confirmed';
   claims: ExtractedClaim[];
   reconciled_value?: string;
   conflict_explanation?: string;
@@ -60,6 +67,7 @@ interface SituationBrief {
   title: string;
   executive_summary: string;
   confirmed_facts: Record<string, string>;
+  unverified_single_source_facts: Record<string, string>;
   unresolved_conflicts: string[];
   critical_missing_fields: string[];
   recommended_priorities: string[];
@@ -68,6 +76,8 @@ interface SituationBrief {
   model_name: string;
   approved_by_operator: boolean;
   operator_notes?: string;
+  emergency_override?: boolean;
+  override_reason?: string;
 }
 
 interface Incident {
@@ -76,6 +86,7 @@ interface Incident {
   preset_id?: string;
   status: string;
   deployment_mode: string;
+  app_mode: 'live' | 'fixture';
   created_at: string;
   updated_at: string;
   sources: SourceReport[];
@@ -88,59 +99,65 @@ interface Incident {
 const API_BASE = 'http://localhost:8000';
 
 export default function App() {
-  const [, setIncidents] = useState<Incident[]>([]);
   const [activeIncident, setActiveIncident] = useState<Incident | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'de' | 'fr' | 'it'>('en');
   const [loading, setLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [auditStatus, setAuditStatus] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<'evidence' | 'canvas' | 'brief'>('canvas');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
+  // Emergency override state
+  const [emergencyOverrideActive, setEmergencyOverrideActive] = useState<boolean>(false);
+  const [overrideReason, setOverrideReason] = useState<string>('');
+
   // New report form state
-  const [newReportModality, setNewReportModality] = useState<'text' | 'image_document' | 'voice_audio'>('text');
+  const [newReportModality, setNewReportModality] = useState<'text' | 'document_transcript' | 'voice_transcript'>('text');
   const [newReportLang, setNewReportLang] = useState<'de' | 'fr' | 'it' | 'en'>('de');
   const [newReportRole, setNewReportRole] = useState<string>('First Responder Field Unit');
   const [newReportContent, setNewReportContent] = useState<string>('');
 
-  // Initial load
   useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  const fetchInitialData = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE}/api/incidents`);
-      if (res.ok) {
+    let ignore = false;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setErrorMessage(null);
+        const res = await fetch(`${API_BASE}/api/incidents`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load incidents`);
         const data: Incident[] = await res.json();
-        setIncidents(data);
-        if (data.length > 0) {
+        if (!ignore && data.length > 0) {
           setActiveIncident(data[0]);
           if (data[0].sources.length > 0) {
             setSelectedSourceId(data[0].sources[0].report_id);
           }
         }
+      } catch (err: any) {
+        if (!ignore) setErrorMessage(err.message || 'Cannot connect to RelayZero API server');
+      } finally {
+        if (!ignore) setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch incidents', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleSelectPreset = async (presetId: string) => {
     try {
       setLoading(true);
+      setErrorMessage(null);
       const res = await fetch(`${API_BASE}/api/presets/${presetId}/load`, { method: 'POST' });
-      if (res.ok) {
-        const updated: Incident = await res.json();
-        setActiveIncident(updated);
-        if (updated.sources.length > 0) {
-          setSelectedSourceId(updated.sources[0].report_id);
-        }
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load preset`);
+      const updated: Incident = await res.json();
+      setActiveIncident(updated);
+      if (updated.sources.length > 0) {
+        setSelectedSourceId(updated.sources[0].report_id);
       }
-    } catch (err) {
-      console.error('Failed to load preset', err);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to switch preset');
     } finally {
       setLoading(false);
     }
@@ -150,28 +167,32 @@ export default function App() {
     if (!activeIncident) return;
     try {
       setLoading(true);
+      setErrorMessage(null);
       const res = await fetch(`${API_BASE}/api/incidents/${activeIncident.incident_id}/process`, {
         method: 'POST',
       });
-      if (res.ok) {
-        const updated: Incident = await res.json();
-        setActiveIncident(updated);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || `HTTP ${res.status}: Pipeline compilation failed`);
       }
-    } catch (err) {
-      console.error('Failed to process pipeline', err);
+      const updated: Incident = await res.json();
+      setActiveIncident(updated);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Pipeline execution failed');
     } finally {
       setLoading(false);
     }
   };
 
   const handleOperatorAction = async (payload: {
+    action: string;
     claim_id?: string;
     cluster_id?: string;
-    action: string;
     new_value?: string;
   }) => {
     if (!activeIncident) return;
     try {
+      setErrorMessage(null);
       const res = await fetch(`${API_BASE}/api/incidents/${activeIncident.incident_id}/operator-action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -180,52 +201,61 @@ export default function App() {
           operator_id: 'OP-SWISS-01',
         }),
       });
-      if (res.ok) {
-        const updated: Incident = await res.json();
-        setActiveIncident(updated);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Operator action rejected');
       }
-    } catch (err) {
-      console.error('Operator action failed', err);
+      const updated: Incident = await res.json();
+      setActiveIncident(updated);
+    } catch (err: any) {
+      setErrorMessage(err.message);
     }
   };
 
   const handleApproveBrief = async () => {
     if (!activeIncident) return;
     try {
+      setErrorMessage(null);
       const res = await fetch(`${API_BASE}/api/incidents/${activeIncident.incident_id}/approve-brief`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           approved: true,
-          operator_notes: 'Verified against cantonal emergency dispatch standards.',
+          operator_notes: 'Reviewed against Swiss federal disaster response protocols.',
           operator_id: 'OP-COMMANDER-URI',
+          emergency_override: emergencyOverrideActive,
+          override_reason: emergencyOverrideActive ? overrideReason : null,
         }),
       });
-      if (res.ok) {
-        const updated: Incident = await res.json();
-        setActiveIncident(updated);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Brief approval rejected');
       }
-    } catch (err) {
-      console.error('Brief approval failed', err);
+      const updated: Incident = await res.json();
+      setActiveIncident(updated);
+      setEmergencyOverrideActive(false);
+      setOverrideReason('');
+    } catch (err: any) {
+      setErrorMessage(err.message);
     }
   };
 
   const handleExportBundle = async () => {
     if (!activeIncident) return;
     try {
+      setErrorMessage(null);
       const res = await fetch(`${API_BASE}/api/incidents/${activeIncident.incident_id}/export`);
-      if (res.ok) {
-        const bundle = await res.json();
-        const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `RelayZero_Export_${activeIncident.incident_id}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch (err) {
-      console.error('Export failed', err);
+      if (!res.ok) throw new Error('Export failed');
+      const bundle = await res.json();
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `RelayZero_Checksummed_Bundle_${activeIncident.incident_id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Export failed');
     }
   };
 
@@ -238,8 +268,8 @@ export default function App() {
         setAuditStatus(data.chain_intact ? `✓ SHA-256 Chain Intact (${data.entries_count} blocks)` : '✗ Audit Corrupted');
         setTimeout(() => setAuditStatus(null), 4000);
       }
-    } catch (err) {
-      console.error('Audit verification failed', err);
+    } catch {
+      setAuditStatus('✗ Audit verification failed');
     }
   };
 
@@ -247,6 +277,7 @@ export default function App() {
     e.preventDefault();
     if (!activeIncident || !newReportContent.trim()) return;
     try {
+      setErrorMessage(null);
       const newReport: SourceReport = {
         report_id: `SRC-CUSTOM-${Date.now().toString().slice(-4)}`,
         incident_id: activeIncident.incident_id,
@@ -263,36 +294,41 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newReport),
       });
-      if (res.ok) {
-        const updated: Incident = await res.json();
-        setActiveIncident(updated);
-        setSelectedSourceId(newReport.report_id);
-        setShowAddModal(false);
-        setNewReportContent('');
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Failed to add report');
       }
-    } catch (err) {
-      console.error('Failed to add report', err);
+      const updated: Incident = await res.json();
+      setActiveIncident(updated);
+      setSelectedSourceId(newReport.report_id);
+      setShowAddModal(false);
+      setNewReportContent('');
+    } catch (err: any) {
+      setErrorMessage(err.message);
     }
   };
 
   const getModalityIcon = (mod: string) => {
     switch (mod) {
-      case 'voice_audio':
+      case 'voice_transcript':
         return <Mic size={14} color="#38bdf8" />;
-      case 'image_document':
+      case 'document_transcript':
         return <FileText size={14} color="#a855f7" />;
       default:
         return <Radio size={14} color="#10b981" />;
     }
   };
 
-  const conflictClusters = activeIncident?.clusters.filter((c) => c.status === 'conflict') || [];
-  const corroboratedClusters = activeIncident?.clusters.filter((c) => c.status === 'corroborated' || c.status === 'single_source') || [];
+  const conflictClusters = activeIncident?.clusters.filter((c) => c.status === 'conflicting') || [];
   const missingClusters = activeIncident?.clusters.filter((c) => c.status === 'missing') || [];
+  const singleSourceClusters = activeIncident?.clusters.filter((c) => c.status === 'single_source_unverified') || [];
+  const confirmedOrCorroboratedClusters = activeIncident?.clusters.filter((c) => c.status === 'corroborated' || c.status === 'operator_confirmed') || [];
+
+  const hasCriticalBlockers = conflictClusters.some((c) => c.is_critical_field) || missingClusters.some((c) => c.is_critical_field);
 
   return (
     <div>
-      {/* 1. Header Sovereignty Strip */}
+      {/* 1. Header Sovereignty Strip with Unmistakable Mode Badge */}
       <header className="top-strip" role="banner">
         <div className="brand-section">
           <div className="brand-logo">
@@ -302,15 +338,23 @@ export default function App() {
           <span className="brand-badge">CH-DECISION-SUPPORT</span>
         </div>
 
-        <div className="badges-group" role="region" aria-label="Sovereignty Status">
+        <div className="badges-group" role="region" aria-label="Operational Mode Status">
+          {/* Explicit Honest Mode Badge */}
+          {activeIncident?.app_mode === 'live' ? (
+            <span className="status-chip chip-model" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981' }}>
+              ● LIVE APERTUS 1.5 8B
+            </span>
+          ) : (
+            <span className="status-chip chip-model" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid #fbbf24' }}>
+              ⚙ SYNTHETIC DEMO FIXTURE
+            </span>
+          )}
+
           <span className="status-chip chip-airgap">
-            <Lock size={12} /> AIR-GAPPED (SOVEREIGN)
+            <Lock size={12} /> AIR-GAP CAPABLE
           </span>
           <span className="status-chip chip-egress">
-            <CheckCircle size={12} /> EGRESS 0 VERIFIED
-          </span>
-          <span className="status-chip chip-model">
-            APERTUS-1.5-8B
+            <CheckCircle size={12} /> LOCAL RUNTIME
           </span>
         </div>
 
@@ -332,18 +376,44 @@ export default function App() {
             className="btn-primary"
             onClick={handleProcessPipeline}
             disabled={loading || !activeIncident}
-            aria-label="Process incident pipeline"
+            aria-label="Compile incident pipeline"
           >
             <RefreshCw size={13} className={loading ? 'spin' : ''} />
-            {loading ? 'Processing Apertus...' : 'Compile Incident'}
+            {loading ? 'Compiling...' : 'Compile Incident'}
           </button>
         </div>
       </header>
 
+      {/* Error Toast / Alert Panel */}
+      {errorMessage && (
+        <div className="error-banner" role="alert" style={{ background: '#7f1d1d', color: '#fef2f2', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+            <AlertCircle size={16} />
+            <span><strong>System Notice:</strong> {errorMessage}</span>
+          </div>
+          <button style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px' }} onClick={() => setErrorMessage(null)}>
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Mobile Navigation Tabs */}
+      <nav className="mobile-nav-tabs" aria-label="Mobile sections">
+        <button className={`mobile-tab-btn ${mobileTab === 'evidence' ? 'active' : ''}`} onClick={() => setMobileTab('evidence')}>
+          Evidence Rail ({activeIncident?.sources.length || 0})
+        </button>
+        <button className={`mobile-tab-btn ${mobileTab === 'canvas' ? 'active' : ''}`} onClick={() => setMobileTab('canvas')}>
+          Claims Canvas ({activeIncident?.claims.length || 0})
+        </button>
+        <button className={`mobile-tab-btn ${mobileTab === 'brief' ? 'active' : ''}`} onClick={() => setMobileTab('brief')}>
+          Situation Brief
+        </button>
+      </nav>
+
       {/* 2. Main Folio Layout */}
       <main className="folio-layout">
         {/* LEFT EVIDENCE RAIL */}
-        <section className="folio-panel" aria-label="Submitted Evidence Rail">
+        <section className={`folio-panel ${mobileTab === 'evidence' ? 'mobile-visible' : 'mobile-hidden'}`} aria-label="Evidence Rail">
           <div className="panel-header">
             <h2 className="panel-title">
               <Radio size={14} /> Evidence Rail ({activeIncident?.sources.length || 0})
@@ -352,7 +422,7 @@ export default function App() {
               className="btn-secondary"
               style={{ padding: '3px 8px', fontSize: '11px' }}
               onClick={() => setShowAddModal(true)}
-              aria-label="Ingest new report"
+              aria-label="Ingest field report"
             >
               <PlusCircle size={12} /> Ingest
             </button>
@@ -397,7 +467,7 @@ export default function App() {
         </section>
 
         {/* CENTRAL EVIDENCE CANVAS */}
-        <section className="folio-panel" aria-label="Evidence Reconciliation Canvas">
+        <section className={`folio-panel ${mobileTab === 'canvas' ? 'mobile-visible' : 'mobile-hidden'}`} aria-label="Claims Canvas">
           <div className="panel-header">
             <h2 className="panel-title">
               <FileText size={14} /> Factual Claims Canvas ({activeIncident?.claims.length || 0})
@@ -431,12 +501,12 @@ export default function App() {
             {(!activeIncident?.claims || activeIncident.claims.length === 0) && (
               <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-dim)' }}>
                 <Radio size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                <p style={{ fontSize: '13px' }}>No structured claims extracted yet.</p>
-                <p style={{ fontSize: '12px' }}>Click <strong>"Compile Incident"</strong> to run Apertus isolated extraction & conflict reconciliation.</p>
+                <p style={{ fontSize: '13px' }}>No structured claims compiled yet.</p>
+                <p style={{ fontSize: '12px' }}>Click <strong>"Compile Incident"</strong> to run extraction & cross-source reconciliation.</p>
               </div>
             )}
 
-            {/* Contradictory Clusters First (High Priority) */}
+            {/* 1. CONFLICTING CLUSTERS (High Priority) */}
             {conflictClusters.map((cluster) => (
               <div key={cluster.cluster_id} className="cluster-group conflict">
                 <div className="cluster-header">
@@ -444,7 +514,7 @@ export default function App() {
                     ⚠️ {cluster.field.toUpperCase().replace('_', ' ')}
                   </span>
                   <span className="status-chip" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' }}>
-                    CONTRADICTION
+                    CONTRADICTION DETECTED
                   </span>
                 </div>
                 <div className="cluster-body">
@@ -457,18 +527,20 @@ export default function App() {
                     {cluster.claims.map((claim) => (
                       <div
                         key={claim.claim_id}
-                        className={`claim-row ${claim.operator_status === 'confirmed' ? 'confirmed' : ''}`}
+                        className={`claim-row ${claim.operator_status === 'operator_confirmed' ? 'confirmed' : ''}`}
                       >
                         <div className="claim-row-header">
                           <span className="claim-source-tag">{claim.source_id} ({claim.language.toUpperCase()})</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Confidence: {(claim.confidence * 100).toFixed(0)}%</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                            Span: [{claim.evidence_span.start_char}..{claim.evidence_span.end_char}]
+                          </span>
                         </div>
                         <div className="claim-value-text">{claim.operator_edited_value || claim.normalized_value}</div>
-                        <div className="claim-evidence-quote">"{claim.evidence_pointer}"</div>
+                        <div className="claim-evidence-quote">"{claim.evidence_span.exact_quote}"</div>
                         <div className="operator-actions-bar">
                           <button
                             className="action-btn-sm action-btn-confirm"
-                            onClick={() => handleOperatorAction({ claim_id: claim.claim_id, action: 'confirm' })}
+                            onClick={() => handleOperatorAction({ action: 'confirm_claim', claim_id: claim.claim_id })}
                           >
                             ✓ Confirm This Fact
                           </button>
@@ -476,14 +548,14 @@ export default function App() {
                             className="action-btn-sm"
                             onClick={() => {
                               const val = prompt('Edit factual value:', claim.normalized_value);
-                              if (val) handleOperatorAction({ claim_id: claim.claim_id, action: 'edit', new_value: val });
+                              if (val) handleOperatorAction({ action: 'edit_claim', claim_id: claim.claim_id, new_value: val });
                             }}
                           >
                             <Edit2 size={10} /> Edit
                           </button>
                           <button
                             className="action-btn-sm"
-                            onClick={() => handleOperatorAction({ claim_id: claim.claim_id, action: 'reject' })}
+                            onClick={() => handleOperatorAction({ action: 'reject_claim', claim_id: claim.claim_id })}
                           >
                             <XCircle size={10} /> Reject
                           </button>
@@ -495,15 +567,15 @@ export default function App() {
               </div>
             ))}
 
-            {/* Corroborated / Confirmed Clusters */}
-            {corroboratedClusters.map((cluster) => (
+            {/* 2. CONFIRMED OR CORROBORATED FACTS */}
+            {confirmedOrCorroboratedClusters.map((cluster) => (
               <div key={cluster.cluster_id} className="cluster-group corroborated">
                 <div className="cluster-header">
                   <span className="cluster-field-name">
                     ✓ {cluster.field.toUpperCase().replace('_', ' ')}
                   </span>
                   <span className="status-chip chip-egress">
-                    {cluster.claims.length > 1 ? `CORROBORATED (${cluster.claims.length}x)` : 'SINGLE SOURCE'}
+                    {cluster.status === 'operator_confirmed' ? 'OPERATOR CONFIRMED' : `CORROBORATED (${cluster.claims.length}x)`}
                   </span>
                 </div>
                 <div className="cluster-body">
@@ -517,7 +589,37 @@ export default function App() {
               </div>
             ))}
 
-            {/* Missing Critical Fields */}
+            {/* 3. SINGLE SOURCE UNVERIFIED */}
+            {singleSourceClusters.map((cluster) => (
+              <div key={cluster.cluster_id} className="cluster-group" style={{ borderColor: 'var(--border-default)' }}>
+                <div className="cluster-header" style={{ background: 'var(--bg-surface)' }}>
+                  <span className="cluster-field-name">
+                    👁️ {cluster.field.toUpperCase().replace('_', ' ')}
+                  </span>
+                  <span className="status-chip" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>
+                    SINGLE-SOURCE (UNVERIFIED)
+                  </span>
+                </div>
+                <div className="cluster-body">
+                  <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>
+                    {cluster.reconciled_value}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    {cluster.conflict_explanation}
+                  </div>
+                  <div style={{ marginTop: '8px' }}>
+                    <button
+                      className="action-btn-sm action-btn-confirm"
+                      onClick={() => handleOperatorAction({ action: 'resolve_cluster', cluster_id: cluster.cluster_id, new_value: cluster.reconciled_value })}
+                    >
+                      ✓ Manually Confirm as Fact
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* 4. MISSING CRITICAL SLOTS */}
             {missingClusters.map((cluster) => (
               <div key={cluster.cluster_id} className="cluster-group missing">
                 <div className="cluster-header">
@@ -525,7 +627,7 @@ export default function App() {
                     ❓ {cluster.field.toUpperCase().replace('_', ' ')}
                   </span>
                   <span className="status-chip" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc' }}>
-                    MISSING FIELD
+                    CRITICAL DATA GAP
                   </span>
                 </div>
                 <div className="cluster-body">
@@ -539,7 +641,7 @@ export default function App() {
         </section>
 
         {/* RIGHT HUMAN DECISION PANEL */}
-        <section className="folio-panel" aria-label="Human Operator Situation Brief">
+        <section className={`folio-panel ${mobileTab === 'brief' ? 'mobile-visible' : 'mobile-hidden'}`} aria-label="Situation Brief Panel">
           <div className="panel-header">
             <h2 className="panel-title">
               <Shield size={14} /> Situation Brief & Export
@@ -549,7 +651,7 @@ export default function App() {
                 className="btn-secondary"
                 style={{ padding: '3px 8px', fontSize: '11px' }}
                 onClick={handleExportBundle}
-                aria-label="Export sealed bundle"
+                aria-label="Export checksummed bundle"
               >
                 <Download size={12} /> Bundle
               </button>
@@ -582,35 +684,70 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Operator Approval Status */}
+                {/* Operator Approval Safety Gate */}
                 <div style={{
-                  padding: '10px 12px',
+                  padding: '12px',
                   borderRadius: '6px',
-                  background: activeIncident.brief.approved_by_operator ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                  background: activeIncident.brief.approved_by_operator ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.08)',
                   border: `1px solid ${activeIncident.brief.approved_by_operator ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  flexDirection: 'column',
+                  gap: '8px',
                 }}>
-                  <div style={{ fontSize: '12px' }}>
-                    <strong>Operator Status:</strong>{' '}
-                    <span style={{ color: activeIncident.brief.approved_by_operator ? 'var(--status-confirmed)' : '#fbbf24' }}>
-                      {activeIncident.brief.approved_by_operator ? 'APPROVED BY OPERATOR' : 'PENDING APPROVAL'}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <strong>Commander Approval:</strong>{' '}
+                    <span style={{ color: activeIncident.brief.approved_by_operator ? 'var(--status-confirmed)' : '#fbbf24', fontWeight: 600 }}>
+                      {activeIncident.brief.approved_by_operator ? 'APPROVED BY COMMANDER' : 'PENDING VERIFICATION'}
                     </span>
                   </div>
-                  {!activeIncident.brief.approved_by_operator ? (
-                    <button className="btn-primary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={handleApproveBrief}>
-                      Sign & Approve
-                    </button>
-                  ) : (
-                    <span style={{ fontSize: '11px', color: 'var(--status-confirmed)' }}>✓ Signed</span>
+
+                  {/* Safety check warning */}
+                  {!activeIncident.brief.approved_by_operator && (
+                    <>
+                      {hasCriticalBlockers ? (
+                        <div style={{ fontSize: '11px', color: '#fca5a5', background: 'rgba(239, 68, 68, 0.15)', padding: '6px 8px', borderRadius: '4px' }}>
+                          <AlertTriangle size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                          Approval blocked: Critical contradictions or missing slots remain.
+                          <div style={{ marginTop: '6px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#fef2f2' }}>
+                              <input
+                                type="checkbox"
+                                checked={emergencyOverrideActive}
+                                onChange={(e) => setEmergencyOverrideActive(e.target.checked)}
+                              />
+                              <span>Emergency Commander Override</span>
+                            </label>
+                          </div>
+                          {emergencyOverrideActive && (
+                            <div style={{ marginTop: '6px' }}>
+                              <input
+                                className="form-input"
+                                style={{ width: '100%', fontSize: '11px', padding: '4px 8px' }}
+                                placeholder="Mandatory operational justification..."
+                                value={overrideReason}
+                                onChange={(e) => setOverrideReason(e.target.value)}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+
+                      <button
+                        className="btn-primary"
+                        style={{ alignSelf: 'flex-start', padding: '5px 12px', fontSize: '11px' }}
+                        onClick={handleApproveBrief}
+                        disabled={hasCriticalBlockers && (!emergencyOverrideActive || overrideReason.trim().length < 5)}
+                      >
+                        {emergencyOverrideActive ? 'Sign with Emergency Override' : 'Sign & Approve Brief'}
+                      </button>
+                    </>
                   )}
                 </div>
 
-                {/* Confirmed Facts Key-Value */}
+                {/* Confirmed Facts List */}
                 <div>
                   <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Confirmed Operational Facts
+                    Confirmed Operational Facts ({Object.keys(activeIncident.brief.confirmed_facts).length})
                   </h3>
                   <div className="brief-facts-list">
                     {Object.entries(activeIncident.brief.confirmed_facts).map(([k, v]) => (
@@ -621,6 +758,23 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+
+                {/* Unverified Single Source List */}
+                {Object.keys(activeIncident.brief.unverified_single_source_facts).length > 0 && (
+                  <div>
+                    <h3 style={{ fontSize: '12px', color: '#38bdf8', textTransform: 'uppercase', marginBottom: '6px' }}>
+                      Single-Source Intelligence (Unverified)
+                    </h3>
+                    <div className="brief-facts-list">
+                      {Object.entries(activeIncident.brief.unverified_single_source_facts).map(([k, v]) => (
+                        <div key={k} className="fact-item" style={{ borderLeftColor: '#38bdf8' }}>
+                          <span className="fact-key">{k.toUpperCase().replace('_', ' ')}</span>
+                          <span className="fact-val" style={{ color: 'var(--text-muted)' }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Recommended Operational Priorities */}
                 {activeIncident.brief.recommended_priorities.length > 0 && (
@@ -638,11 +792,11 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Tamper-Evident Audit Trail */}
+                {/* Cryptographic Audit Trail */}
                 <div style={{ marginTop: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                      Cryptographic Audit Chain
+                      Tamper-Evident Audit Chain
                     </h3>
                     <button
                       style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '11px', cursor: 'pointer' }}
@@ -680,7 +834,7 @@ export default function App() {
         </section>
       </main>
 
-      {/* Add Report Modal */}
+      {/* Ingest Report Modal */}
       {showAddModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <div className="modal-card">
@@ -704,8 +858,8 @@ export default function App() {
                   onChange={(e: any) => setNewReportModality(e.target.value)}
                 >
                   <option value="text">SMS / TETRA Text</option>
-                  <option value="image_document">Scanned Protocol Form (OCR)</option>
-                  <option value="voice_audio">Voice Radio / Audio Note (Transcript)</option>
+                  <option value="document_transcript">Document / OCR Form Transcript</option>
+                  <option value="voice_transcript">Radio / Audio Voice Transcript</option>
                 </select>
               </div>
 
@@ -731,7 +885,7 @@ export default function App() {
                   className="form-input"
                   value={newReportRole}
                   onChange={(e) => setNewReportRole(e.target.value)}
-                  placeholder="e.g. Police Uri, Trapped Citizen, Civil Protection"
+                  placeholder="e.g. Police Uri, Citizen, Civil Protection"
                   required
                 />
               </div>
@@ -743,7 +897,7 @@ export default function App() {
                   className="form-textarea"
                   value={newReportContent}
                   onChange={(e) => setNewReportContent(e.target.value)}
-                  placeholder="Enter raw report, OCR extract, or voice transcript..."
+                  placeholder="Enter raw report text or transcript..."
                   required
                 />
               </div>

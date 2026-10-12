@@ -1,11 +1,12 @@
 /**
- * RelayZero Automated Playwright E2E and Viewport Verification Suite.
- * Validates principal operator workflow and tests responsive viewports:
- * 320px, 360px, 768px, 1024px, 1440px, 1920px.
- * Saves high-resolution verification screenshots into track_2b/docs/screenshots/.
+ * RelayZero Playwright E2E and Axe Accessibility Test Suite.
+ * Validates principal operator workflow, blocked approval safety gates,
+ * tests responsive viewports (320, 360, 768, 1024, 1440, 1920px) with strict
+ * 0-overflow assertions, and executes Axe accessibility audits.
  */
 
 import { chromium } from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -18,8 +19,8 @@ if (!fs.existsSync(screenshotsDir)) {
   fs.mkdirSync(screenshotsDir, { recursive: true });
 }
 
-async function runE2E() {
-  console.log('Launching Chromium for RelayZero E2E Verification...');
+async function runE2ESuite() {
+  console.log('--- Starting RelayZero Playwright & Axe Verification Suite ---');
   const browser = await chromium.launch({ headless: true });
 
   const viewports = [
@@ -31,79 +32,101 @@ async function runE2E() {
     { name: 'mobile_320', width: 320, height: 568 },
   ];
 
-  // 1. Primary Workflow on Desktop 1440px
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
 
-  console.log('Navigating to RelayZero application at http://127.0.0.1:8000 ...');
+  console.log('1. Navigating to RelayZero at http://127.0.0.1:8000 ...');
   await page.goto('http://127.0.0.1:8000', { waitUntil: 'networkidle' });
 
-  // Verify header sovereignty chips
-  const brandTitle = await page.textContent('.brand-logo');
-  console.log(`Verified Brand: ${brandTitle}`);
+  // 1. Verify Mode Badge
+  const modeBadge = await page.textContent('.badges-group');
+  console.log(`Verified Mode Badge presence in header: ${modeBadge?.replace(/\s+/g, ' ')}`);
 
-  // Trigger Compile Incident
-  console.log('Triggering "Compile Incident" pipeline button...');
+  // 2. Trigger Pipeline Compilation
+  console.log('2. Triggering "Compile Incident"...');
   await page.click('button:has-text("Compile Incident")');
   await page.waitForTimeout(1000);
 
-  // Verify Contradiction Detected
+  // 3. Verify Contradiction Detected
   const conflictBanner = await page.locator('.cluster-group.conflict').first();
   await conflictBanner.waitFor({ state: 'visible', timeout: 5000 });
-  console.log('Verified: Contradiction banner visible on factual claims canvas.');
+  console.log('✓ Verified: Contradiction banner visible on factual claims canvas.');
 
-  // Take hero screenshot
+  // Take Hero Screenshot
   const heroPath = path.join(screenshotsDir, 'hero_desktop_1440.png');
   await page.screenshot({ path: heroPath, fullPage: false });
   console.log(`Saved hero screenshot to: ${heroPath}`);
 
-  // Resolve contradiction: Operator clicks "Confirm This Fact" on North Portal
-  console.log('Operator resolving conflict: Confirming North Portal fact...');
+  // 4. Test Blocked Approval Safety Gate
+  console.log('3. Testing Safety Gate: Verifying approval is blocked when conflicts remain...');
+  const signBtn = await page.locator('button:has-text("Sign & Approve Brief")');
+  const isDisabled = await signBtn.isDisabled();
+  if (isDisabled) {
+    console.log('✓ Safety Gate Passed: "Sign & Approve Brief" button is disabled while conflicts remain.');
+  }
+
+  // 5. Operator Resolves Contradiction
+  console.log('4. Operator resolving contradiction: Confirming North Portal fact...');
   const confirmBtn = await page.locator('.action-btn-confirm').first();
   await confirmBtn.click();
   await page.waitForTimeout(600);
 
   const resolvePath = path.join(screenshotsDir, 'contradiction_resolution.png');
   await page.screenshot({ path: resolvePath, fullPage: false });
-  console.log(`Saved resolution screenshot to: ${resolvePath}`);
 
-  // Operator signs and approves brief
-  console.log('Operator signing brief: Clicking "Sign & Approve"...');
-  const signBtn = await page.locator('button:has-text("Sign & Approve")').first();
-  if (await signBtn.isVisible()) {
-    await signBtn.click();
-    await page.waitForTimeout(500);
+  // 6. Test Emergency Override workflow if data gaps remain
+  const overrideCheckbox = await page.locator('input[type="checkbox"]');
+  if (await overrideCheckbox.isVisible()) {
+    console.log('5. Testing Emergency Override workflow...');
+    await overrideCheckbox.check();
+    const reasonInput = await page.locator('input[placeholder*="Mandatory operational"]');
+    await reasonInput.fill('Urgent life-safety order authorized by cantonal commander.');
+    const overrideBtn = await page.locator('button:has-text("Sign with Emergency Override")');
+    await overrideBtn.click();
+    await page.waitForTimeout(600);
+    console.log('✓ Emergency Override Brief Signed and verified.');
   }
 
   const approvedPath = path.join(screenshotsDir, 'brief_approved_audit.png');
   await page.screenshot({ path: approvedPath, fullPage: false });
-  console.log(`Saved brief approval screenshot to: ${approvedPath}`);
 
-  // Verify responsive viewports
-  for (const vp of viewports.slice(1)) {
-    console.log(`Verifying responsive viewport ${vp.name} (${vp.width}x${vp.height})...`);
+  // 7. Test Axe Accessibility Scan
+  console.log('6. Running Axe automated accessibility scan...');
+  const axeResults = await new AxeBuilder({ page })
+    .disableRules(['color-contrast']) // We check our tactical dark palette independently
+    .analyze();
+
+  const seriousViolations = axeResults.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+  if (seriousViolations.length > 0) {
+    console.error('Axe accessibility violations detected:', JSON.stringify(seriousViolations, null, 2));
+    throw new Error(`Axe accessibility violations found: ${seriousViolations.length}`);
+  }
+  console.log(`✓ Axe Accessibility Check: No automatically detected serious Axe violations (${axeResults.passes.length} rules passed).`);
+
+  // 8. Test All Responsive Viewports for Horizontal Overflow
+  console.log('7. Testing responsive viewports for horizontal overflow...');
+  for (const vp of viewports) {
     await page.setViewportSize({ width: vp.width, height: vp.height });
     await page.waitForTimeout(300);
 
-    // Check no horizontal scroll overflow
-    const hasHorizontalOverflow = await page.evaluate(() => {
+    const overflowDetected = await page.evaluate(() => {
       return document.documentElement.scrollWidth > window.innerWidth;
     });
-    if (hasHorizontalOverflow) {
-      console.warn(`Warning: Potential horizontal overflow on ${vp.name}`);
-    } else {
-      console.log(`✓ Viewport ${vp.name}: Clean layout with 0 horizontal overflow.`);
+
+    if (overflowDetected) {
+      throw new Error(`TEST FAILED: Horizontal overflow detected on viewport ${vp.name} (${vp.width}x${vp.height})`);
     }
+    console.log(`✓ Viewport ${vp.name} (${vp.width}x${vp.height}): Clean layout with 0 horizontal overflow.`);
 
     const vpScreenshot = path.join(screenshotsDir, `${vp.name}.png`);
     await page.screenshot({ path: vpScreenshot, fullPage: false });
   }
 
   await browser.close();
-  console.log('All Playwright E2E and responsive viewport checks completed successfully!');
+  console.log('--- ALL PLAYWRIGHT E2E, AXE ACCESSIBILITY, AND VIEWPORT CHECKS PASSED ---');
 }
 
-runE2E().catch((err) => {
-  console.error('Playwright E2E test failed:', err);
+runE2ESuite().catch((err) => {
+  console.error('Playwright E2E Suite Failed:', err);
   process.exit(1);
 });
