@@ -27,10 +27,10 @@ http://hackapertus.ch/online-hack/submissions
 
 ## Key Achievements & Benchmark Numbers for Form Submission
 
-- **Evaluation Status:** *Live Apertus evaluation pending endpoint access.* (Evaluated using 24 multi-source synthetic incidents across DE, FR, IT, EN).
-- **Field Extraction F1:** `0.836` (micro) / `0.937` (macro) vs 0.595 (micro) / 0.333 (macro) for regex baseline.
-- **Contradiction Detection:** `100.0%` precision, `0.462` F1 vs 0.0% for keyword baseline.
+- **Evaluation Status:** *Deterministic engineering regression tests. Live Apertus evaluation pending endpoint access.* (Evaluated on 24 multi-source test cases with zero gold leakage during inference).
+- **Field Extraction F1:** `0.311` (micro) / `0.273` (macro) on multi-source synthesis vs 0.278 (micro) / 0.242 (macro) for single-pass baseline.
+- **Contradiction Detection:** `100.0%` precision, `0.333` F1 (20.0% recall) vs 0.0% for regex and single-pass baselines.
 - **Evidence Grounding:** `100.0%` evidence attribution precision via exact character-level substring quote validation; 0.0% unsupported claims.
-- **Test Coverage:** `89.9%` (90%) automated backend coverage with `pytest --cov-fail-under=85` strictly enforced.
+- **Test Coverage:** `88.8%` automated backend coverage with `pytest --cov-fail-under=85` strictly enforced (30/30 tests passing).
 - **Accessibility & Responsiveness:** No automatically detected serious Axe accessibility violations; verified 0 horizontal overflow across 320px, 360px, 768px, 1024px, 1440px, and 1920px viewports.
 - **Offline Integrity:** Checksummed tamper-evident bundle export with SHA-256 hash-chained audit manifest and offline verification tool (`verify_bundle.py`).

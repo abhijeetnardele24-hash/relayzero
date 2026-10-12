@@ -18,12 +18,21 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install Backend Dependencies
+      - name: Install Backend Dependencies & Tools
         run: |
           python -m pip install --upgrade pip
           pip install -r track_2b/src/backend/requirements.txt
+          pip install ruff bandit pypdf
 
-      - name: Run Backend Pytest & Egress Suite
+      - name: Python Lint & Format Validation
+        run: |
+          ruff check track_2b/src/backend
+
+      - name: Static Security Scan (Bandit)
+        run: |
+          bandit -r track_2b/src/backend -x track_2b/src/backend/tests
+
+      - name: Run Backend Pytest & Coverage Gate (>=85%)
         run: |
           export PYTHONPATH=.
           pytest track_2b/src/backend/tests -v -o asyncio_mode=auto --cov=track_2b/src/backend --cov-report=term --cov-fail-under=85
@@ -36,7 +45,47 @@ jobs:
         run: |
           python track_2b/generate_pdf.py
 
-  frontend-quality-gates:
+      - name: Validate PDF Page Count
+        run: |
+          python -c "
+          import pypdf
+          reader = pypdf.PdfReader('track_2b/RelayZero_Report.pdf')
+          pages = len(reader.pages)
+          print(f'Report pages: {pages}')
+          assert 1 <= pages <= 6, f'Page count {pages} exceeds official 6-page limit!'
+          "
+
+      - name: Dataset Size Check (< 100 MB)
+        run: |
+          python -c "
+          import os
+          data_size = sum(os.path.getsize(os.path.join(r, f)) for r, d, files in os.walk('track_2b/data') for f in files)
+          print(f'Total data footprint: {data_size / 1024:.2f} KB')
+          assert data_size < 100 * 1024 * 1024, 'Data exceeds 100MB limit!'
+          "
+
+      - name: Prohibited Pattern & Hallucination Scan
+        run: |
+          python -c "
+          import os
+          banned = ['0.948', '0.936', '0.938', '1.2%', '328.4 ms', '412.5 ms', '88%']
+          found = []
+          for root, dirs, files in os.walk('track_2b'):
+              if any(p in root for p in ['node_modules', '.git', '__pycache__', 'dist']):
+                  continue
+              for f in files:
+                  if f.endswith(('.py', '.md', '.json')):
+                      fp = os.path.join(root, f)
+                      with open(fp, encoding='utf-8', errors='ignore') as s:
+                          for line_no, line in enumerate(s, 1):
+                              for b in banned:
+                                  if b in line:
+                                      found.append(f'{fp}:{line_no} [{b}]')
+          assert not found, f'Prohibited patterns detected: {found}'
+          print('Clean: Zero prohibited patterns found.')
+          "
+
+  frontend-and-e2e-quality-gates:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,11 +97,19 @@ jobs:
           cache: "npm"
           cache-dependency-path: track_2b/src/frontend/package-lock.json
 
-      - name: Install Frontend Dependencies
-        working-directory: track_2b/src/frontend
-        run: npm ci
+      - name: Set up Python for Backend API Service
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
 
-      - name: Lint Frontend
+      - name: Install Frontend & Backend Dependencies
+        run: |
+          pip install -r track_2b/src/backend/requirements.txt
+          cd track_2b/src/frontend
+          npm ci
+
+      - name: Lint Frontend (Oxlint)
         working-directory: track_2b/src/frontend
         run: npm run lint
 
@@ -60,11 +117,55 @@ jobs:
         working-directory: track_2b/src/frontend
         run: npm run build
 
-  docker-build:
+      - name: Install Playwright Browsers
+        working-directory: track_2b/src/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Application Server & Execute E2E Suite
+        run: |
+          export PYTHONPATH=.
+          export APP_MODE=fixture
+          python -m uvicorn track_2b.src.backend.main:app --host 127.0.0.1 --port 8000 &
+          sleep 3
+          curl -f http://127.0.0.1:8000/api/health
+          node track_2b/src/frontend/e2e_runner.mjs
+
+  docker-and-runtime-gates:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker Image
+      - name: Build Docker Container
         working-directory: track_2b
         run: docker compose build
+
+      - name: Start Container
+        working-directory: track_2b
+        run: docker compose up -d
+
+      - name: Verify Container Health Check
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/api/health | grep -q "status"; then
+              echo "Container health check passed!"
+              exit 0
+            fi
+            echo "Waiting for container..."
+            sleep 1
+          done
+          echo "Healthcheck timed out!"
+          docker logs relayzero-app
+          exit 1
+
+      - name: Execute Representative API Workflow
+        run: |
+          echo "1. Checking presets endpoint:"
+          curl -f http://localhost:8000/api/presets
+          echo -e "\n2. Triggering incident processing workflow:"
+          curl -f -X POST http://localhost:8000/api/process \
+            -H "Content-Type: application/json" \
+            -d '{"preset_id": "preset_alpine_tunnel"}'
+
+      - name: Shutdown Container
+        working-directory: track_2b
+        run: docker compose down

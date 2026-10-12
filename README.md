@@ -120,19 +120,19 @@ We benchmarked three executable systems on our curated 24-incident multi-source 
 > *Live Apertus evaluation pending endpoint access.*  
 > All metrics below are calculated dynamically from executable pipeline predictions over the 24 gold standard cases (`track_2b/data/evaluation_metrics.json`).
 
-| Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage (Ours) | Delta vs Regex |
+| Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage (Ours) | Delta vs Single-Pass |
 | :--- | :---: | :---: | :---: | :---: |
 | **Schema / JSON Validity** | 100.0% | 100.0% | **100.0%** | 0.0% |
-| **Field Micro F1** | 0.595 | 0.991 | **0.836** | +24.1% |
-| **Field Macro F1** | 0.333 | 0.996 | **0.937** | +60.4% |
+| **Field Micro F1** | 0.690 | 0.278 | **0.311** | +3.3% |
+| **Field Macro F1** | 0.599 | 0.242 | **0.273** | +3.1% |
 | **Evidence Attribution Precision** | 100.0% | 100.0% | **100.0%** | 0.0% |
-| **Contradiction Precision** | 0.0% | 100.0% | **100.0%** | +100.0% |
-| **Contradiction Recall** | 0.0% | 50.0% | **30.0%** | +30.0% |
-| **Contradiction F1** | 0.000 | 0.667 | **0.462** | +0.462 |
+| **Contradiction Precision** | 0.0% | 0.0% | **100.0%** | +100.0% |
+| **Contradiction Recall** | 0.0% | 0.0% | **20.0%** | +20.0% |
+| **Contradiction F1** | 0.000 | 0.000 | **0.333** | +0.333 |
 | **Missing-Field Abstention Accuracy** | 100.0% | 100.0% | **100.0%** | 0.0% |
 | **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** | 0.0% |
 | **Prompt Injection Containment** | 100.0% | 100.0% | **100.0%** | 0.0% |
-| **Measured Latency** | 0.07 ms | 0.01 ms | **0.01 ms** | -0.06 ms |
+| **Measured Latency** | 0.12 ms | 0.02 ms | **0.11 ms** | +0.09 ms |
 
 ---
 
@@ -187,7 +187,7 @@ python -m track_2b.src.backend.verify_bundle exported_bundle.json
 ## 🔐 Deployment & Operational Modes
 
 RelayZero supports explicit, unconfusable operating modes:
-- **`APP_MODE=live`**: Connects directly to the configured Apertus endpoint (`APERTUS_API_BASE`). If the endpoint fails or times out, an explicit error is returned; silent fallbacks to fixtures are prohibited.
+- **`APP_MODE=live`**: Connects directly to the configured Apertus endpoint (`LLM_BASE_URL`). If the endpoint fails or times out, an explicit error is returned; silent fallbacks to fixtures are prohibited.
 - **`APP_MODE=fixture`**: Operates in synthetic demonstration mode with local scenario fixtures, clearly labeled as `SYNTHETIC DEMO FIXTURE` across all UI badges, API headers, and exported bundles.
 
 ---

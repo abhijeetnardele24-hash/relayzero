@@ -7,7 +7,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - LLM_NAME=swiss-ai/Apertus-v1.5-8B
+      - APP_MODE=${APP_MODE:-fixture}
+      - LLM_NAME=${LLM_NAME:-swiss-ai/Apertus-v1.5-8B}
       - LLM_BASE_URL=${LLM_BASE_URL:-}
       - LLM_API_KEY=${LLM_API_KEY:-}
     restart: unless-stopped

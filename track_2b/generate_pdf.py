@@ -245,15 +245,15 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
         [Paragraph("<b>Metric</b>", table_header), Paragraph("<b>Regex Baseline</b>", table_header), Paragraph("<b>Single-Pass Baseline</b>", table_header), Paragraph("<b>RelayZero Pipeline</b>", table_header)],
         [Paragraph("Sample Count", table_cell), Paragraph("24 incidents", table_cell), Paragraph("24 incidents", table_cell), Paragraph("24 incidents", table_cell)],
         [Paragraph("Schema / JSON Validity (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Field Extraction F1 (Micro)", table_cell), Paragraph("0.595", table_cell), Paragraph("0.991", table_cell), Paragraph("0.836", table_cell)],
-        [Paragraph("Field Extraction F1 (Macro)", table_cell), Paragraph("0.333", table_cell), Paragraph("0.996", table_cell), Paragraph("0.937", table_cell)],
+        [Paragraph("Field Extraction F1 (Micro)", table_cell), Paragraph("0.690", table_cell), Paragraph("0.278", table_cell), Paragraph("0.311", table_cell)],
+        [Paragraph("Field Extraction F1 (Macro)", table_cell), Paragraph("0.599", table_cell), Paragraph("0.242", table_cell), Paragraph("0.273", table_cell)],
         [Paragraph("Evidence Attribution Precision (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Contradiction Precision (%)", table_cell), Paragraph("0.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Contradiction Recall (%)", table_cell), Paragraph("0.0%", table_cell), Paragraph("50.0%", table_cell), Paragraph("30.0%", table_cell)],
-        [Paragraph("Contradiction F1 Score", table_cell), Paragraph("0.000", table_cell), Paragraph("0.667", table_cell), Paragraph("0.462", table_cell)],
+        [Paragraph("Contradiction Precision (%)", table_cell), Paragraph("0.0%", table_cell), Paragraph("0.0%", table_cell), Paragraph("100.0%", table_cell)],
+        [Paragraph("Contradiction Recall (%)", table_cell), Paragraph("0.0%", table_cell), Paragraph("0.0%", table_cell), Paragraph("20.0%", table_cell)],
+        [Paragraph("Contradiction F1 Score", table_cell), Paragraph("0.000", table_cell), Paragraph("0.000", table_cell), Paragraph("0.333", table_cell)],
         [Paragraph("Missing-Field Abstention Acc (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
         [Paragraph("Prompt Injection Containment (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Average Measured Latency", table_cell), Paragraph("0.07 ms", table_cell), Paragraph("< 0.01 ms", table_cell), Paragraph("< 0.01 ms", table_cell)],
+        [Paragraph("Average Measured Latency", table_cell), Paragraph("0.12 ms", table_cell), Paragraph("0.02 ms", table_cell), Paragraph("0.11 ms", table_cell)],
     ]
     eval_table = Table(eval_table_data, colWidths=[170, 110, 120, 120])
     eval_table.setStyle(TableStyle([
