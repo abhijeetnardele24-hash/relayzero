@@ -1,7 +1,7 @@
 {
   "benchmark_title": "RelayZero Swiss Multilingual Multi-Source Evaluation Benchmark",
   "sample_count": 24,
-  "computed_at": "2026-10-12T21:25:18.959393+00:00",
+  "computed_at": "2026-10-12T21:35:00.985494+00:00",
   "app_mode": "fixture",
   "note": "Deterministic engineering regression tests (Live Apertus evaluation pending endpoint access)",
   "results": [
@@ -18,7 +18,7 @@
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.14,
+      "measured_latency_ms": 0.13,
       "token_metrics": null
     },
     {
@@ -34,7 +34,7 @@
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.05,
+      "measured_latency_ms": 0.02,
       "token_metrics": null
     },
     {
@@ -50,7 +50,7 @@
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.25,
+      "measured_latency_ms": 0.14,
       "token_metrics": null
     }
   ]
