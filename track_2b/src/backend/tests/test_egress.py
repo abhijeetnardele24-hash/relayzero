@@ -1,7 +1,6 @@
 """
-Air-Gap Egress Zero Verification Test.
-Ensures that the RelayZero inference and compilation pipeline operates
-with ZERO outbound network calls during runtime execution.
+Air-Gap Egress Verification Test Suite.
+Verifies honest egress status evaluation and socket probe behavior.
 """
 
 import socket
@@ -9,21 +8,20 @@ import pytest
 from track_2b.src.backend.pipeline import IncidentPipeline
 from track_2b.src.backend.presets import get_synthetic_presets
 from track_2b.src.backend.audit import AuditLogger
+from track_2b.src.backend.schemas import EgressStatusEnum
 
 
 @pytest.mark.asyncio
-async def test_egress_zero_verification(monkeypatch):
+async def test_egress_probe_behavior(monkeypatch):
     """
-    Hooks socket.create_connection and socket.socket.connect
-    to detect any attempt to initiate outbound network egress.
+    Validates that socket outbound attempts are intercepted,
+    and proves that runtime fixture compilation makes no network calls.
     """
     attempted_connections = []
 
-    orig_connect = socket.socket.connect
-
     def blocked_connect(self, address):
         attempted_connections.append(address)
-        raise ConnectionRefusedError(f"EGRESS VIOLATION: Attempted outbound call to {address}")
+        raise ConnectionRefusedError(f"EGRESS BLOCKED: Connection to {address} denied")
 
     monkeypatch.setattr(socket.socket, "connect", blocked_connect)
 
@@ -32,13 +30,20 @@ async def test_egress_zero_verification(monkeypatch):
     incident = presets[0]
     audit = AuditLogger()
 
-    # Run complete multi-stage pipeline
+    # Run complete pipeline
     claims = await pipeline.execute_stage_a_extraction(incident, audit)
     clusters = pipeline.execute_stage_b_reconciliation(incident, claims, audit)
     brief = pipeline.execute_stage_c_brief(incident, clusters, audit)
-    bundle = pipeline.execute_stage_d_export(incident, audit)
 
-    # Assert zero external network connections were attempted
-    assert len(attempted_connections) == 0, f"Outbound calls detected: {attempted_connections}"
-    assert bundle.egress_zero_verified is True
-    assert bundle.air_gapped_verified is True
+    # Export bundle with explicit egress status
+    bundle = pipeline.execute_stage_d_export(incident, audit, egress_status=EgressStatusEnum.VERIFIED)
+
+    assert len(attempted_connections) == 0
+    assert bundle.egress_verification == EgressStatusEnum.VERIFIED
+
+
+def test_egress_status_enum_validity():
+    assert EgressStatusEnum.VERIFIED == "verified"
+    assert EgressStatusEnum.UNVERIFIED == "unverified"
+    assert EgressStatusEnum.FAILED == "failed"
+    assert EgressStatusEnum.NOT_APPLICABLE == "not_applicable"

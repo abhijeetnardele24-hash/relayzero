@@ -1,20 +1,21 @@
 """
-RelayZero Synthetic Presets for Swiss Emergency Operations.
-Covers multilingual (DE, FR, IT, EN), multimodal (Text, Scanned Form, Voice Note) scenarios
-with calibrated factual conflicts and missing data.
+RelayZero Synthetic Demonstration Scenarios.
+Covers multilingual (DE, FR, IT, EN) and multi-source (Text, Document Transcript, Voice Transcript)
+reports with calibrated factual conflicts and missing data.
 """
 
-from typing import List, Dict
+from typing import List
 from datetime import datetime, timezone
 from .schemas import (
     Incident,
     SourceReport,
     ModalityEnum,
     LanguageEnum,
+    AppModeEnum,
 )
 
 
-def get_synthetic_presets() -> List[Incident]:
+def get_synthetic_presets(app_mode: AppModeEnum = AppModeEnum.FIXTURE) -> List[Incident]:
     now = datetime.now(timezone.utc).isoformat()
 
     # Preset 1: Alpine Tunnel Smoke Incident (Gotthard Corridor)
@@ -24,6 +25,7 @@ def get_synthetic_presets() -> List[Incident]:
         preset_id="alpine_tunnel_smoke",
         status="active",
         deployment_mode="air_gapped",
+        app_mode=app_mode,
         created_at=now,
         updated_at=now,
         sources=[
@@ -42,9 +44,9 @@ def get_synthetic_presets() -> List[Incident]:
             SourceReport(
                 report_id="SRC-FR-02",
                 incident_id="INC-2026-CH-01",
-                modality=ModalityEnum.IMAGE_DOCUMENT,
+                modality=ModalityEnum.DOCUMENT_TRANSCRIPT,
                 language=LanguageEnum.FR,
-                author_role="Centre d'intervention Sud / Airolo (Scanned Form)",
+                author_role="Centre d'intervention Sud / Airolo (Scanned Form OCR Transcript)",
                 received_at="2026-10-12T14:14:00Z",
                 source_channel="Fax / Scanned Protocol Form OCR",
                 reliability_tier="Field Inspection Unit",
@@ -54,14 +56,14 @@ def get_synthetic_presets() -> List[Incident]:
             SourceReport(
                 report_id="SRC-IT-03",
                 incident_id="INC-2026-CH-01",
-                modality=ModalityEnum.VOICE_AUDIO,
+                modality=ModalityEnum.VOICE_TRANSCRIPT,
                 language=LanguageEnum.IT,
                 author_role="Citizen / Trapped Driver (Audio Transcript)",
                 received_at="2026-10-12T14:19:00Z",
                 source_channel="Centrale 118 / Voice Emergency Call",
                 reliability_tier="Direct Witness",
                 raw_content="[TRASCRIZIONE VOCALE 118]: Pronto? C'è fumo denso ovunque, non si respira! Siamo chiusi nella nicchia di sicurezza 4. Con me ci sono altre persone, siamo in 12 persone nella nicchia 4, compreso un bambino. Abbiamo sentito un boato verso le 14:15, mandate soccorsi presto!",
-                metadata={"audio_duration_sec": 34, "transcription_model": "Whisper-Local-AirGap"},
+                metadata={"audio_duration_sec": 34, "transcription_source": "Speech-to-text transcript"},
             ),
         ],
     )
@@ -73,6 +75,7 @@ def get_synthetic_presets() -> List[Incident]:
         preset_id="flood_shelter_capacity",
         status="active",
         deployment_mode="air_gapped",
+        app_mode=app_mode,
         created_at=now,
         updated_at=now,
         sources=[
@@ -91,11 +94,11 @@ def get_synthetic_presets() -> List[Incident]:
             SourceReport(
                 report_id="SRC-DE-02",
                 incident_id="INC-2026-CH-02",
-                modality=ModalityEnum.IMAGE_DOCUMENT,
+                modality=ModalityEnum.DOCUMENT_TRANSCRIPT,
                 language=LanguageEnum.DE,
-                author_role="Zivilschutz Einsatzleiter (Scanned Status Report)",
+                author_role="Zivilschutz Einsatzleiter (Scanned Status Transcript)",
                 received_at="2026-10-12T10:15:00Z",
-                source_channel="Digitalized Field Dispatch Sheet",
+                source_channel="Field Dispatch Sheet Transcript",
                 reliability_tier="Civil Protection Lead",
                 raw_content="LAGEBERICHT NOTUNTERKUNFT: Gymnase des Collines komplett ausgelastet. Bereits 180 Personen eingetroffen (Kapazität 150 überschritten). Dringender Bedarf an 50 zusätzlichen Feldbetten und Eröffnung der Sekundärunterkunft Turnhalle Bramois. Trinkwasserversorgung stabil.",
                 metadata={"capacity_status": "EXCEEDED"},
@@ -110,6 +113,7 @@ def get_synthetic_presets() -> List[Incident]:
         preset_id="rail_power_failure",
         status="active",
         deployment_mode="air_gapped",
+        app_mode=app_mode,
         created_at=now,
         updated_at=now,
         sources=[
@@ -128,7 +132,7 @@ def get_synthetic_presets() -> List[Incident]:
             SourceReport(
                 report_id="SRC-FR-02",
                 incident_id="INC-2026-CH-03",
-                modality=ModalityEnum.VOICE_AUDIO,
+                modality=ModalityEnum.VOICE_TRANSCRIPT,
                 language=LanguageEnum.FR,
                 author_role="Chef de Train / Conductor (Radio Transcript)",
                 received_at="2026-10-12T16:32:00Z",

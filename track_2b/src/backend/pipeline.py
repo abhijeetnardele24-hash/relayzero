@@ -1,10 +1,7 @@
 """
 RelayZero Multi-Stage Incident Compilation Pipeline.
-Executes Stages A, B, C, and D:
-  Stage A — Isolated Apertus Claim Extraction with character-level evidence pointers
-  Stage B — Evidence Reconciliation, Contradiction Detection, and Missing Field Auditing
-  Stage C — Grounded Situation Brief Generation
-  Stage D — Deterministic Offline Export Bundle Creation
+Executes Stages A, B, C, and D with strict evidence span validation
+and distinct confirmation boundaries.
 """
 
 import hashlib
@@ -18,11 +15,13 @@ from .schemas import (
     ClaimCluster,
     SituationBrief,
     ClusterStatusEnum,
-    OperatorStatusEnum,
-    OfflineExportBundle,
-    LanguageEnum,
+    OperatorClaimStatusEnum,
+    ChecksummedExportBundle,
+    ExtractionStatusEnum,
+    EvidenceSpan,
+    EgressStatusEnum,
 )
-from .apertus_adapter import ApertusAdapter
+from .apertus_adapter import ApertusAdapter, find_and_validate_span
 from .reconciliation import ReconciliationEngine
 from .audit import AuditLogger
 
@@ -31,11 +30,21 @@ class IncidentPipeline:
     def __init__(self, adapter: Optional[ApertusAdapter] = None):
         self.adapter = adapter or ApertusAdapter()
         self.reconciliation_engine = ReconciliationEngine()
+        # In-memory persistence of operator cluster resolutions per incident
+        self.cluster_resolutions_store: Dict[str, Dict[str, str]] = {}
+
+    def set_cluster_resolution(self, incident_id: str, cluster_id: str, resolved_value: str):
+        if incident_id not in self.cluster_resolutions_store:
+            self.cluster_resolutions_store[incident_id] = {}
+        self.cluster_resolutions_store[incident_id][cluster_id] = resolved_value
+
+    def get_cluster_resolutions(self, incident_id: str) -> Dict[str, str]:
+        return self.cluster_resolutions_store.get(incident_id, {})
 
     async def execute_stage_a_extraction(self, incident: Incident, audit: AuditLogger) -> List[ExtractedClaim]:
         """
         Stage A: Extract structured claims independently from each source report.
-        Neutralizes prompt injection inside reports.
+        Strictly validates evidence spans against source text.
         """
         all_claims: List[ExtractedClaim] = []
         claim_counter = 1
@@ -51,17 +60,34 @@ class IncidentPipeline:
 
             claims_data = extraction_result.get("parsed_json", {}).get("claims", [])
             for c_raw in claims_data:
+                quote = c_raw.get("exact_quote") or c_raw.get("original_value") or ""
+                span = find_and_validate_span(report.raw_content, quote)
+
+                extraction_status = ExtractionStatusEnum.ACCEPTED
+                if not span:
+                    # If span cannot be found in source, flag as review required
+                    extraction_status = ExtractionStatusEnum.REVIEW_REQUIRED
+                    # Fallback slice for schema validation
+                    fallback_quote = report.raw_content[:min(30, len(report.raw_content))]
+                    span = EvidenceSpan(
+                        exact_quote=fallback_quote,
+                        start_char=0,
+                        end_char=len(fallback_quote),
+                    )
+
                 claim = ExtractedClaim(
                     claim_id=f"CLM-{claim_counter:03d}",
                     incident_id=incident.incident_id,
                     source_id=report.report_id,
                     field=c_raw.get("field", "unknown_field"),
                     normalized_value=c_raw.get("normalized_value", ""),
-                    original_value=c_raw.get("original_value", ""),
-                    evidence_pointer=c_raw.get("evidence_pointer", ""),
+                    original_value=c_raw.get("original_value", span.exact_quote),
+                    evidence_span=span,
                     language=report.language,
-                    confidence=float(c_raw.get("confidence", 0.90)),
-                    model_name=extraction_result.get("model_name", "swiss-ai/Apertus-v1.5-8B"),
+                    confidence=c_raw.get("confidence"),  # None if omitted
+                    extraction_status=extraction_status,
+                    operator_status=OperatorClaimStatusEnum.UNREVIEWED,
+                    model_name=extraction_result.get("model_name", self.adapter.get_effective_model_identifier()),
                     prompt_version="v1.2-airgap-strict",
                     timestamp=datetime.now(timezone.utc).isoformat(),
                 )
@@ -70,11 +96,11 @@ class IncidentPipeline:
 
         audit.log(
             action="STAGE_A_EXTRACTION_COMPLETED",
-            actor="Apertus-v1.5-8B",
+            actor=self.adapter.get_effective_model_identifier(),
             details={
                 "extracted_claims_count": len(all_claims),
                 "sources_processed": len(incident.sources),
-                "model_identifier": self.adapter.model_name,
+                "app_mode": self.adapter.app_mode.value,
             },
         )
         return all_claims
@@ -83,12 +109,14 @@ class IncidentPipeline:
         self, incident: Incident, claims: List[ExtractedClaim], audit: AuditLogger
     ) -> List[ClaimCluster]:
         """
-        Stage B: Compares claims, detects contradictions, identifies missing critical fields.
+        Stage B: Compares claims, detects contradictions, identifies missing critical fields,
+        and applies persistent cluster resolutions.
         """
-        clusters, missing_fields = self.reconciliation_engine.reconcile(claims)
+        existing_res = self.get_cluster_resolutions(incident.incident_id)
+        clusters, missing_fields = self.reconciliation_engine.reconcile(claims, existing_res)
 
-        conflicts = [c for c in clusters if c.status == ClusterStatusEnum.CONFLICT]
-        corroborated = [c for c in clusters if c.status == ClusterStatusEnum.CORROBORATED]
+        conflicts = [c for c in clusters if c.status == ClusterStatusEnum.CONFLICTING]
+        corroborated = [c for c in clusters if c.status in (ClusterStatusEnum.CORROBORATED, ClusterStatusEnum.OPERATOR_CONFIRMED)]
 
         audit.log(
             action="STAGE_B_RECONCILIATION_COMPLETED",
@@ -96,7 +124,7 @@ class IncidentPipeline:
             details={
                 "total_clusters": len(clusters),
                 "conflicts_count": len(conflicts),
-                "corroborated_count": len(corroborated),
+                "corroborated_or_confirmed_count": len(corroborated),
                 "missing_critical_fields": missing_fields,
             },
         )
@@ -109,46 +137,45 @@ class IncidentPipeline:
         audit: AuditLogger,
     ) -> SituationBrief:
         """
-        Stage C: Generates grounded situation brief solely from corroborated facts
-        and explicitly calls out unresolved contradictions and missing fields.
+        Stage C: Generates grounded situation brief.
+        Confirmed facts contain ONLY operator_confirmed or corroborated facts.
+        Single-source claims are kept separate under unverified_single_source_facts.
         """
         confirmed_facts: Dict[str, str] = {}
+        unverified_single_source: Dict[str, str] = {}
         unresolved_conflicts: List[str] = []
         critical_missing: List[str] = []
         priorities: List[str] = []
 
         for cluster in clusters:
-            if cluster.status in (ClusterStatusEnum.CORROBORATED, ClusterStatusEnum.SINGLE_SOURCE) and cluster.reconciled_value:
+            if cluster.status in (ClusterStatusEnum.OPERATOR_CONFIRMED, ClusterStatusEnum.CORROBORATED) and cluster.reconciled_value:
                 confirmed_facts[cluster.field] = cluster.reconciled_value
-            elif cluster.status == ClusterStatusEnum.CONFLICT:
+            elif cluster.status == ClusterStatusEnum.SINGLE_SOURCE_UNVERIFIED and cluster.reconciled_value:
+                unverified_single_source[cluster.field] = cluster.reconciled_value
+            elif cluster.status == ClusterStatusEnum.CONFLICTING:
                 unresolved_conflicts.append(f"{cluster.field.upper()}: {cluster.conflict_explanation}")
             elif cluster.status == ClusterStatusEnum.MISSING:
                 critical_missing.append(cluster.field)
 
-        # Build grounded executive summary
+        # Summary lines
         summary_lines = []
-        inc_type = confirmed_facts.get("incident_type", "Operational emergency")
-        loc = confirmed_facts.get("location_primary", "Unresolved location")
-        hazard = confirmed_facts.get("hazard_status", "Hazard conditions reported")
+        inc_type = confirmed_facts.get("incident_type") or unverified_single_source.get("incident_type", "Operational Incident")
+        loc = confirmed_facts.get("location_primary") or unverified_single_source.get("location_primary", "Unverified location")
+        hazard = confirmed_facts.get("hazard_status") or unverified_single_source.get("hazard_status", "Active hazard")
+
         summary_lines.append(f"INCIDENT: {inc_type.upper().replace('_', ' ')}.")
-        summary_lines.append(f"LOCATION STATUS: {loc}.")
+        summary_lines.append(f"LOCATION: {loc}.")
         summary_lines.append(f"HAZARD: {hazard}.")
 
         if unresolved_conflicts:
-            summary_lines.append(f"ATTENTION: {len(unresolved_conflicts)} critical factual contradiction(s) require operator resolution.")
+            summary_lines.append(f"CRITICAL WARNING: {len(unresolved_conflicts)} contradiction(s) require operator resolution.")
             for conf in unresolved_conflicts:
                 priorities.append(f"RESOLVE CONFLICT: {conf}")
 
         if critical_missing:
-            summary_lines.append(f"MISSING DATA: No verified reports for {', '.join(critical_missing)}.")
+            summary_lines.append(f"DATA GAP: Missing verified reports for: {', '.join(critical_missing)}.")
             for miss in critical_missing:
-                priorities.append(f"GATHER INTEL: Request field verification for '{miss}'.")
-
-        # Operational priorities
-        if "action_required" in confirmed_facts:
-            priorities.append(f"FIELD ACTION: {confirmed_facts['action_required']}")
-        if "affected_count" in confirmed_facts:
-            priorities.append(f"PERSONS AFFECTED: Account for {confirmed_facts['affected_count']}")
+                priorities.append(f"FIELD RECONNAISSANCE: Collect data on '{miss}'.")
 
         executive_summary = " ".join(summary_lines)
 
@@ -164,12 +191,13 @@ class IncidentPipeline:
             title=f"Tactical Situation Brief — {incident.title}",
             executive_summary=executive_summary,
             confirmed_facts=confirmed_facts,
+            unverified_single_source_facts=unverified_single_source,
             unresolved_conflicts=unresolved_conflicts,
             critical_missing_fields=critical_missing,
             recommended_priorities=priorities,
             multilingual_summaries=multilingual,
             generated_at=datetime.now(timezone.utc).isoformat(),
-            model_name=self.adapter.model_name,
+            model_name=self.adapter.get_effective_model_identifier(),
             approved_by_operator=False,
         )
 
@@ -178,39 +206,47 @@ class IncidentPipeline:
             actor="RelayZero-BriefCompiler",
             details={
                 "confirmed_facts_count": len(confirmed_facts),
+                "unverified_single_source_count": len(unverified_single_source),
                 "unresolved_conflicts_count": len(unresolved_conflicts),
                 "critical_missing_count": len(critical_missing),
             },
         )
         return brief
 
-    def execute_stage_d_export(self, incident: Incident, audit: AuditLogger) -> OfflineExportBundle:
+    def execute_stage_d_export(
+        self,
+        incident: Incident,
+        audit: AuditLogger,
+        egress_status: EgressStatusEnum = EgressStatusEnum.UNVERIFIED,
+    ) -> ChecksummedExportBundle:
         """
-        Stage D: Generates tamper-evident offline export bundle.
+        Stage D: Generates canonical checksummed tamper-evident bundle.
         """
         export_time = datetime.now(timezone.utc).isoformat()
-        export_id = f"EXP-{incident.incident_id}-{int(datetime.now().timestamp())}"
+        bundle_id = f"EXP-{incident.incident_id}-{int(datetime.now().timestamp())}"
 
         data_dict = incident.model_dump(mode="json")
         audit_manifest = [entry.model_dump(mode="json") for entry in audit.trail]
 
         payload_to_hash = {
-            "export_id": export_id,
+            "bundle_id": bundle_id,
             "incident_id": incident.incident_id,
             "exported_at": export_time,
+            "app_mode": incident.app_mode.value,
             "incident_data": data_dict,
             "audit_manifest": audit_manifest,
         }
         serialized = json.dumps(payload_to_hash, sort_keys=True)
         sha256_hash = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
-        bundle = OfflineExportBundle(
-            export_id=export_id,
+        bundle = ChecksummedExportBundle(
+            bundle_id=bundle_id,
             incident_id=incident.incident_id,
             exported_at=export_time,
-            deployment_fingerprint="CH-FED-AIRGAP-NODE-01-SECURE",
-            air_gapped_verified=True,
-            egress_zero_verified=True,
+            system_version="RelayZero v1.0.0",
+            app_mode=incident.app_mode,
+            model_name=self.adapter.get_effective_model_identifier(),
+            egress_verification=egress_status,
             incident_data=data_dict,
             audit_manifest=audit_manifest,
             sha256_checksum=sha256_hash,
@@ -220,9 +256,10 @@ class IncidentPipeline:
             action="STAGE_D_BUNDLE_EXPORTED",
             actor="RelayZero-ExportEngine",
             details={
-                "export_id": export_id,
+                "bundle_id": bundle_id,
                 "sha256_checksum": sha256_hash,
-                "audit_entries_count": len(audit_manifest),
+                "app_mode": incident.app_mode.value,
+                "egress_verification": egress_status.value,
             },
         )
         return bundle

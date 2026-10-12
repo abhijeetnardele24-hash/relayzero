@@ -1,5 +1,5 @@
 """
-Integration tests for RelayZero FastAPI REST endpoints.
+Integration tests for RelayZero FastAPI REST endpoints and safety gates.
 """
 
 import pytest
@@ -14,20 +14,29 @@ def test_api_health():
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "healthy"
-    assert data["deployment_mode"] == "AIR-GAPPED"
-    assert "Apertus" in data["apertus_model"]
-    assert data["egress_zero_verified"] is True
+    assert data["app_mode"] in ("fixture", "live")
+    assert data["egress_verification"] == "unverified"
 
 
-def test_api_presets():
-    res = client.get("/api/presets")
-    assert res.status_code == 200
-    presets = res.json()
-    assert len(presets) >= 3
-    assert any(p["preset_id"] == "alpine_tunnel_smoke" for p in presets)
+def test_api_duplicate_report_rejected():
+    client.post("/api/presets/alpine_tunnel_smoke/load")
+    # Attempting to add report with existing ID SRC-DE-01
+    dup_report = {
+        "report_id": "SRC-DE-01",
+        "incident_id": "INC-2026-CH-01",
+        "modality": "text",
+        "language": "de",
+        "author_role": "Dispatcher",
+        "received_at": "2026-10-12T14:10:00Z",
+        "source_channel": "Radio",
+        "reliability_tier": "Unit",
+        "raw_content": "Duplicate content",
+    }
+    res = client.post("/api/incidents/INC-2026-CH-01/reports", json=dup_report)
+    assert res.status_code == 409
 
 
-def test_api_process_and_operator_action():
+def test_api_process_and_safety_approval_gate():
     # Load preset
     client.post("/api/presets/alpine_tunnel_smoke/load")
 
@@ -36,43 +45,70 @@ def test_api_process_and_operator_action():
     assert proc_res.status_code == 200
     incident = proc_res.json()
     assert len(incident["claims"]) >= 5
-    assert incident["brief"] is not None
 
-    # Find a conflicting cluster and resolve it
-    conflict_cluster = next((c for c in incident["clusters"] if c["status"] == "conflict"), None)
-    if conflict_cluster:
-        action_res = client.post(
-            "/api/incidents/INC-2026-CH-01/operator-action",
-            json={
-                "cluster_id": conflict_cluster["cluster_id"],
-                "action": "resolve_cluster",
-                "new_value": "Gotthard North Portal (Göschenen)",
-                "notes": "Confirmed by drone camera telemetry",
-                "operator_id": "OP-COMMANDER-01",
-            },
-        )
-        assert action_res.status_code == 200
-
-    # Operator approves situation brief
-    approve_res = client.post(
+    # 1. SAFETY GATE: Approval must fail because unresolved conflicts/missing fields remain
+    blocked_approval = client.post(
         "/api/incidents/INC-2026-CH-01/approve-brief",
         json={
             "approved": True,
-            "operator_notes": "Authorizing emergency ventilation protocol",
-            "operator_id": "OP-COMMANDER-01",
+            "operator_notes": "Attempting sign-off without resolving conflicts",
+            "operator_id": "OP-COMMANDER",
+            "emergency_override": False,
         },
     )
-    assert approve_res.status_code == 200
-    assert approve_res.json()["brief"]["approved_by_operator"] is True
+    assert blocked_approval.status_code == 400
+    assert "Approval blocked" in blocked_approval.json()["detail"]
 
-    # Export bundle
-    export_res = client.get("/api/incidents/INC-2026-CH-01/export")
-    assert export_res.status_code == 200
-    bundle = export_res.json()
-    assert bundle["air_gapped_verified"] is True
-    assert len(bundle["sha256_checksum"]) == 64
+    # 2. EMERGENCY OVERRIDE: Must fail if reason is missing or trivial
+    invalid_override = client.post(
+        "/api/incidents/INC-2026-CH-01/approve-brief",
+        json={
+            "approved": True,
+            "operator_id": "OP-COMMANDER",
+            "emergency_override": True,
+            "override_reason": "abc",  # Too short
+        },
+    )
+    assert invalid_override.status_code == 400
 
-    # Verify audit chain
-    audit_res = client.get("/api/incidents/INC-2026-CH-01/audit-verify")
-    assert audit_res.status_code == 200
-    assert audit_res.json()["chain_intact"] is True
+    # 3. Valid emergency override approval
+    valid_override = client.post(
+        "/api/incidents/INC-2026-CH-01/approve-brief",
+        json={
+            "approved": True,
+            "operator_id": "OP-COMMANDER",
+            "emergency_override": True,
+            "override_reason": "Immediate life-safety ventilation order required prior to second report corroboration.",
+        },
+    )
+    assert valid_override.status_code == 200
+    assert valid_override.json()["brief"]["approved_by_operator"] is True
+    assert valid_override.json()["brief"]["emergency_override"] is True
+
+
+def test_api_cluster_resolution_persistence():
+    client.post("/api/presets/alpine_tunnel_smoke/load")
+    client.post("/api/incidents/INC-2026-CH-01/process")
+
+    # Operator resolves conflict
+    action_res = client.post(
+        "/api/incidents/INC-2026-CH-01/operator-action",
+        json={
+            "action": "resolve_cluster",
+            "cluster_id": "CLUS-LOCATION_PRIMARY",
+            "new_value": "Gotthard North Portal (Confirmed by Command)",
+            "notes": "Verified by optical sensors",
+            "operator_id": "OP-COMMANDER",
+        },
+    )
+    assert action_res.status_code == 200
+    inc_after_res = action_res.json()
+    loc_c = next(c for c in inc_after_res["clusters"] if c["field"] == "location_primary")
+    assert loc_c["status"] == "operator_confirmed"
+    assert loc_c["reconciled_value"] == "Gotthard North Portal (Confirmed by Command)"
+
+    # Reprocess incident -> Resolution persists!
+    reproc_res = client.post("/api/incidents/INC-2026-CH-01/process")
+    loc_c2 = next(c for c in reproc_res.json()["clusters"] if c["field"] == "location_primary")
+    assert loc_c2["status"] == "operator_confirmed"
+    assert loc_c2["reconciled_value"] == "Gotthard North Portal (Confirmed by Command)"

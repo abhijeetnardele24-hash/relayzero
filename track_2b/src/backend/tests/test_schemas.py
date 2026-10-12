@@ -10,9 +10,9 @@ from track_2b.src.backend.schemas import (
     ClaimCluster,
     ModalityEnum,
     LanguageEnum,
-    ExtractionStatusEnum,
-    OperatorStatusEnum,
+    OperatorClaimStatusEnum,
     ClusterStatusEnum,
+    EvidenceSpan,
 )
 
 
@@ -35,38 +35,56 @@ def test_source_report_schema_valid():
 
 def test_source_report_schema_invalid():
     with pytest.raises(ValidationError):
-        # Missing required fields
         SourceReport(
             report_id="SRC-01",
             incident_id="INC-01",
         )
 
 
+def test_evidence_span_validation():
+    span = EvidenceSpan(
+        exact_quote="Gotthard",
+        start_char=5,
+        end_char=13,
+    )
+    assert span.exact_quote == "Gotthard"
+    assert span.start_char == 5
+
+    # Invalid span: end <= start
+    with pytest.raises(ValidationError):
+        EvidenceSpan(exact_quote="A", start_char=5, end_char=5)
+
+    # Invalid span: length mismatch
+    with pytest.raises(ValidationError):
+        EvidenceSpan(exact_quote="Too long", start_char=0, end_char=2)
+
+
 def test_extracted_claim_schema():
+    span = EvidenceSpan(exact_quote="Nordportal", start_char=0, end_char=10)
     claim = ExtractedClaim(
         claim_id="CLM-001",
         incident_id="INC-01",
         source_id="SRC-DE-01",
         field="location_primary",
         normalized_value="Gotthard Tunnel North Portal",
-        original_value="Nordportal Göschenen",
-        evidence_pointer="ca. 500m nach dem Nordportal Göschenen",
+        original_value="Nordportal",
+        evidence_span=span,
         language=LanguageEnum.DE,
-        confidence=0.98,
+        confidence=None,  # Confidence honestly None if omitted
         timestamp="2026-10-12T14:06:00Z",
     )
-    assert claim.confidence == 0.98
-    assert claim.operator_status == OperatorStatusEnum.UNREVIEWED
+    assert claim.evidence_span.exact_quote == "Nordportal"
+    assert claim.operator_status == OperatorClaimStatusEnum.UNREVIEWED
 
 
 def test_claim_cluster_schema():
     cluster = ClaimCluster(
         cluster_id="CLUS-LOC",
         field="location_primary",
-        status=ClusterStatusEnum.CONFLICT,
+        status=ClusterStatusEnum.CONFLICTING,
         claims=[],
         conflict_explanation="Conflicting locations",
         is_critical_field=True,
     )
-    assert cluster.status == ClusterStatusEnum.CONFLICT
+    assert cluster.status == ClusterStatusEnum.CONFLICTING
     assert cluster.is_critical_field is True
