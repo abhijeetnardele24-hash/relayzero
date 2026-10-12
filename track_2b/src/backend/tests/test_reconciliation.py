@@ -6,7 +6,6 @@ from track_2b.src.backend.reconciliation import ReconciliationEngine
 from track_2b.src.backend.schemas import (
     ExtractedClaim,
     LanguageEnum,
-    OperatorClaimStatusEnum,
     ClusterStatusEnum,
     EvidenceSpan,
 )

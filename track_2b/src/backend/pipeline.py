@@ -7,7 +7,7 @@ and distinct confirmation boundaries.
 import hashlib
 import json
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 
 from .schemas import (
     Incident,

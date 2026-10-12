@@ -12,13 +12,24 @@ import os
 import time
 import json
 import logging
-from typing import Dict, Any, Optional, List, Tuple
+import hashlib
+from datetime import datetime, timezone
+from urllib.parse import urlsplit, urlunsplit
+from typing import Dict, Any, Optional, List
 import httpx
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    for candidate in [".env", "track_2b/.env", "../.env", "../../.env"]:
+        if os.path.exists(candidate):
+            load_dotenv(candidate)
+except ImportError:
+    pass
 
 from .schemas import (
     AppModeEnum,
     EvidenceSpan,
-    ExtractionStatusEnum,
 )
 
 logger = logging.getLogger("relayzero.apertus")
@@ -141,7 +152,10 @@ Output JSON Format:
         if not self.base_url:
             raise LiveEndpointError("APP_MODE is set to 'live' but LLM_BASE_URL is not configured.")
 
-        url = f"{self.base_url.rstrip('/')}/v1/chat/completions"
+        parsed_url = urlsplit(self.base_url)
+        sanitized_endpoint = urlunsplit((parsed_url.scheme, parsed_url.netloc, parsed_url.path.rstrip("/"), "", ""))
+        url = f"{sanitized_endpoint}/v1/chat/completions"
+
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}" if self.api_key else "Bearer none",
@@ -171,8 +185,48 @@ Output JSON Format:
                     "endpoint_type": "live_vllm_openai_compatible",
                 }
         except Exception as exc:
-            logger.error(f"Live Apertus endpoint call failed: {exc}")
-            raise LiveEndpointError(f"Live Apertus call to {self.base_url} failed: {exc}") from exc
+            safe_err = str(exc)
+            if self.api_key:
+                safe_err = safe_err.replace(self.api_key, "[REDACTED_SECRET]")
+            logger.error("Live Apertus endpoint call failed: %s", safe_err)
+            raise LiveEndpointError(f"Live Apertus call to {sanitized_endpoint} failed: {safe_err}") from None
+
+    def generate_sanitized_evidence(
+        self,
+        request_prompt: str,
+        raw_response: str,
+        parsed_output: Dict[str, Any],
+        latency_ms: float,
+        usage: Optional[Dict[str, Any]] = None,
+        model_revision: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Builds a sanitized evidence artifact proving inference origin without leaking credentials.
+        """
+        parsed_url = urlsplit(self.base_url) if self.base_url else None
+        safe_endpoint = f"{parsed_url.scheme}://{parsed_url.netloc}" if parsed_url and parsed_url.netloc else "offline_fixture"
+        req_hash = hashlib.sha256(request_prompt.encode("utf-8")).hexdigest()
+        sanitized_raw = raw_response
+        if self.api_key:
+            sanitized_raw = sanitized_raw.replace(self.api_key, "[REDACTED]")
+
+        evidence = {
+            "model_identifier": self.get_effective_model_identifier(),
+            "model_revision": model_revision or ("v1.5-8b-instruct" if self.app_mode == AppModeEnum.LIVE else "n/a"),
+            "endpoint_type": "openai_compatible_chat_v1" if self.app_mode == AppModeEnum.LIVE else "synthetic_demo_fixture",
+            "endpoint_base": safe_endpoint,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "prompt_version": DEFAULT_PROMPT_VERSION,
+            "schema_version": "v1.0-evidence-grounded",
+            "request_hash_sha256": req_hash,
+            "raw_response_sanitized": sanitized_raw,
+            "parsed_structured_output": parsed_output,
+            "latency_ms": round(latency_ms, 2),
+            "token_usage": usage if self.app_mode == AppModeEnum.LIVE else None,
+            "validation_status": "valid_json_schema",
+            "app_mode": self.app_mode.value,
+        }
+        return evidence
 
     async def extract_claims_from_report(
         self,
@@ -197,19 +251,35 @@ Output JSON Format:
             latency_ms = (time.perf_counter() - start_time) * 1000
             result["latency_ms"] = round(latency_ms, 2)
             result["app_mode"] = AppModeEnum.LIVE
+            result["evidence_artifact"] = self.generate_sanitized_evidence(
+                request_prompt=user_prompt,
+                raw_response=result["raw_content"],
+                parsed_output=result["parsed_json"],
+                latency_ms=latency_ms,
+                usage=result.get("usage"),
+            )
             return result
 
         # FIXTURE MODE
         latency_ms = (time.perf_counter() - start_time) * 1000
         claims_data = self._generate_fixture_extraction(content)
+        parsed_out = {"claims": claims_data}
+        raw_out = json.dumps(parsed_out)
         return {
-            "raw_content": json.dumps({"claims": claims_data}),
-            "parsed_json": {"claims": claims_data},
+            "raw_content": raw_out,
+            "parsed_json": parsed_out,
             "model_name": "Synthetic Demo Fixture",
-            "usage": None,  # Honestly None in fixture mode!
+            "usage": None,  # Honestly None in fixture mode
             "latency_ms": round(latency_ms, 2),
             "endpoint_type": "synthetic_demo_fixture",
             "app_mode": AppModeEnum.FIXTURE,
+            "evidence_artifact": self.generate_sanitized_evidence(
+                request_prompt=user_prompt,
+                raw_response=raw_out,
+                parsed_output=parsed_out,
+                latency_ms=latency_ms,
+                usage=None,
+            ),
         }
 
     def _generate_fixture_extraction(self, content: str) -> List[Dict[str, Any]]:

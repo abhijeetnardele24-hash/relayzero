@@ -6,7 +6,7 @@ Strict Pydantic v2 schemas and domain models.
 from __future__ import annotations
 from enum import Enum
 from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class ModalityEnum(str, Enum):

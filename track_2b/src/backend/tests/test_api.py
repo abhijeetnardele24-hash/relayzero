@@ -2,7 +2,6 @@
 Integration tests for RelayZero FastAPI REST endpoints and safety gates.
 """
 
-import pytest
 from starlette.testclient import TestClient
 from track_2b.src.backend.main import app
 

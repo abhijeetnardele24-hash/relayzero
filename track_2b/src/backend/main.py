@@ -5,26 +5,22 @@ Hardened endpoints with strict CORS, lifespan management, and safety gates.
 """
 
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .schemas import (
     Incident,
     SourceReport,
-    ExtractedClaim,
-    ClaimCluster,
-    SituationBrief,
     OperatorActionRequest,
     OperatorActionTypeEnum,
     OperatorClaimStatusEnum,
     ClusterStatusEnum,
     BriefApprovalRequest,
     ChecksummedExportBundle,
-    AppModeEnum,
     EgressStatusEnum,
 )
 from .pipeline import IncidentPipeline

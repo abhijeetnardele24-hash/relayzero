@@ -33,7 +33,7 @@ async def test_egress_probe_behavior(monkeypatch):
     # Run complete pipeline
     claims = await pipeline.execute_stage_a_extraction(incident, audit)
     clusters = pipeline.execute_stage_b_reconciliation(incident, claims, audit)
-    brief = pipeline.execute_stage_c_brief(incident, clusters, audit)
+    _ = pipeline.execute_stage_c_brief(incident, clusters, audit)
 
     # Export bundle with explicit egress status
     bundle = pipeline.execute_stage_d_export(incident, audit, egress_status=EgressStatusEnum.VERIFIED)
