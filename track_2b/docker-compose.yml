@@ -1,0 +1,21 @@
+services:
+  relayzero:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: relayzero-app
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_NAME=swiss-ai/Apertus-v1.5-8B
+      - LLM_BASE_URL=${LLM_BASE_URL:-}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - relayzero-net
+
+networks:
+  relayzero-net:
+    driver: bridge
