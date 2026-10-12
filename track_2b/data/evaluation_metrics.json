@@ -1,16 +1,16 @@
 {
   "benchmark_title": "RelayZero Swiss Multilingual Multi-Source Evaluation Benchmark",
   "sample_count": 24,
-  "computed_at": "2026-10-12T19:56:08.154926+00:00",
+  "computed_at": "2026-10-12T21:25:18.959393+00:00",
   "app_mode": "fixture",
-  "note": "Live Apertus evaluation pending endpoint access",
+  "note": "Deterministic engineering regression tests (Live Apertus evaluation pending endpoint access)",
   "results": [
     {
       "system_name": "Regex / Keyword Baseline",
       "sample_count": 24,
       "schema_validity_pct": 100.0,
-      "field_f1_micro": 0.595,
-      "field_f1_macro": 0.333,
+      "field_f1_micro": 0.69,
+      "field_f1_macro": 0.599,
       "evidence_attribution_precision_pct": 100.0,
       "contradiction_precision_pct": 0.0,
       "contradiction_recall_pct": 0.0,
@@ -18,40 +18,40 @@
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.08,
-      "token_usage": null
+      "measured_latency_ms": 0.14,
+      "token_metrics": null
     },
     {
       "system_name": "Single-Pass Extraction Baseline",
       "sample_count": 24,
       "schema_validity_pct": 100.0,
-      "field_f1_micro": 0.991,
-      "field_f1_macro": 0.996,
+      "field_f1_micro": 0.278,
+      "field_f1_macro": 0.242,
       "evidence_attribution_precision_pct": 100.0,
-      "contradiction_precision_pct": 100.0,
-      "contradiction_recall_pct": 50.0,
-      "contradiction_f1": 0.667,
+      "contradiction_precision_pct": 0.0,
+      "contradiction_recall_pct": 0.0,
+      "contradiction_f1": 0.0,
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.01,
-      "token_usage": null
+      "measured_latency_ms": 0.05,
+      "token_metrics": null
     },
     {
       "system_name": "RelayZero Multi-Stage Pipeline",
       "sample_count": 24,
       "schema_validity_pct": 100.0,
-      "field_f1_micro": 0.836,
-      "field_f1_macro": 0.937,
+      "field_f1_micro": 0.311,
+      "field_f1_macro": 0.273,
       "evidence_attribution_precision_pct": 100.0,
       "contradiction_precision_pct": 100.0,
-      "contradiction_recall_pct": 30.0,
-      "contradiction_f1": 0.462,
+      "contradiction_recall_pct": 20.0,
+      "contradiction_f1": 0.333,
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.0,
-      "token_usage": null
+      "measured_latency_ms": 0.25,
+      "token_metrics": null
     }
   ]
 }

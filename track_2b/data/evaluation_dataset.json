@@ -30,12 +30,12 @@
       },
       {
         "field": "location_primary",
-        "normalized_value": "Gotthard North Portal",
+        "normalized_value": "Gotthard Road Tunnel - North Portal (Göschenen)",
         "quote": "Nordportal Göschenen"
       },
       {
         "field": "location_primary",
-        "normalized_value": "Gotthard South Portal",
+        "normalized_value": "Gotthard Road Tunnel - South Portal (Airolo)",
         "quote": "portail sud Airolo"
       },
       {
@@ -45,12 +45,12 @@
       },
       {
         "field": "affected_count",
-        "normalized_value": "20",
+        "normalized_value": "20 persons",
         "quote": "20 personnes"
       },
       {
         "field": "affected_count",
-        "normalized_value": "12",
+        "normalized_value": "12 persons",
         "quote": "12 persone"
       }
     ],
@@ -88,17 +88,17 @@
       },
       {
         "field": "location_primary",
-        "normalized_value": "Gymnase des Collines Sion",
-        "quote": "Gymnase des Collines à Sion"
+        "normalized_value": "Sion Emergency Shelter (Gymnase des Collines)",
+        "quote": "Gymnase des Collines"
       },
       {
         "field": "affected_count",
-        "normalized_value": "150",
+        "normalized_value": "150 persons",
         "quote": "150 personnes"
       },
       {
         "field": "affected_count",
-        "normalized_value": "180",
+        "normalized_value": "180 evacuees",
         "quote": "180 Personen"
       }
     ],
@@ -136,12 +136,12 @@
       },
       {
         "field": "location_primary",
-        "normalized_value": "Olten-Bern Mainline km 28",
+        "normalized_value": "Olten-Bern Mainline, km 28",
         "quote": "km 28"
       },
       {
         "field": "affected_count",
-        "normalized_value": "450",
+        "normalized_value": "450 stranded passengers",
         "quote": "450 Passagieren"
       }
     ],
@@ -184,11 +184,6 @@
         "field": "time_occurred",
         "normalized_value": "03:20",
         "quote": "03:20 Uhr"
-      },
-      {
-        "field": "hazard_status",
-        "normalized_value": "toxic_cloud",
-        "quote": "Giftige Wolke"
       }
     ],
     "gold_contradictions": [],

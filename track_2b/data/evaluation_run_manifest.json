@@ -1,9 +1,9 @@
 {
-  "execution_timestamp": "2026-10-12T19:56:08.182227+00:00",
-  "git_commit_sha": "c8e59014a79f338f618c2f51f059afc3e633b823",
-  "dataset_checksum_sha256": "d18aede4c6db2942339aa2ebf0e36e25881abfa1f4b553f29ff63431763cbfac",
+  "execution_timestamp": "2026-10-12T21:25:18.960391+00:00",
+  "git_commit_sha": "03e714c31fcf32368ba94cc9fecea40145555145",
+  "inputs_checksum_sha256": "8edfdb25159bfda2c9b59de2e0686b2c2a8c9aced70f22311de9f5de3ae0ab67",
   "command_used": "python -m track_2b.src.backend.evaluation_runner",
   "app_mode": "fixture",
-  "model_configured": "swiss-ai/Apertus-v1.5-8B",
+  "model_configured": "Synthetic Demo Fixture",
   "endpoint_configured": false
 }
