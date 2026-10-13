@@ -1,7 +1,7 @@
 {
   "benchmark_title": "RelayZero Swiss Multilingual Multi-Source Evaluation Benchmark",
   "sample_count": 24,
-  "computed_at": "2026-10-12T21:39:03.995064+00:00",
+  "computed_at": "2026-10-13T21:38:16.614770+00:00",
   "app_mode": "fixture",
   "note": "Deterministic engineering regression tests (Live Apertus evaluation pending endpoint access)",
   "results": [
@@ -18,8 +18,8 @@
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.17,
-      "token_metrics": null
+      "measured_latency_ms": 0.14,
+      "model_usage_metrics": null
     },
     {
       "system_name": "Single-Pass Extraction Baseline",
@@ -34,8 +34,8 @@
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.07,
-      "token_metrics": null
+      "measured_latency_ms": 0.05,
+      "model_usage_metrics": null
     },
     {
       "system_name": "RelayZero Multi-Stage Pipeline",
@@ -50,8 +50,8 @@
       "missing_field_abstention_acc_pct": 100.0,
       "unsupported_claim_rate_pct": 0.0,
       "prompt_injection_containment_pct": 100.0,
-      "measured_latency_ms": 0.27,
-      "token_metrics": null
+      "measured_latency_ms": 0.21,
+      "model_usage_metrics": null
     }
   ]
 }

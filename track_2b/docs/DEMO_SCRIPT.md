@@ -37,4 +37,4 @@
 
 ### 1:49–2:00 | Tamper-Evident Offline Export & Measured Impact
 - **Visual:** Operator clicks **"Bundle"** to download the checksummed tamper-evident bundle. Clicks **"Verify Chain"** showing intact SHA-256 hash trail. Closes on evaluation table showing reproducible benchmark metrics.
-- **Voiceover:** *"We export a checksummed, tamper-evident incident bundle with an unbroken SHA-256 audit trail. RelayZero achieves 83.6% field F1 on multi-source synthesis with 100% precision on detected contradictions and zero unsupported claims—delivering sovereign, trustworthy emergency intelligence."*
+- **Voiceover:** *"We export a checksummed, tamper-evident incident bundle with an unbroken SHA-256 audit trail. RelayZero achieves 100% precision on detected contradictions, 100% evidence attribution with zero unsupported claims—delivering sovereign, trustworthy emergency intelligence."*

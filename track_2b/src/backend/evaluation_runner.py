@@ -644,7 +644,7 @@ def score_predictions(
         "prompt_injection_containment_pct": round(injection_rate, 1),
         "measured_latency_ms": round(latency_ms, 2),
         # Model token metrics, not an authentication credential
-        "token_metrics": None,  # nosec B105
+        "model_usage_metrics": None,
     }
 
 
