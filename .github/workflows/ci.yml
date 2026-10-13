@@ -113,20 +113,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: track_2b/src/frontend/package-lock.json
 
       - name: Set up Python for Backend API Service
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
 
-      - name: Install Frontend & Backend Dependencies
-        run: |
-          pip install -r track_2b/src/backend/requirements.txt
-          cd track_2b/src/frontend
-          npm ci
+      - name: Install Backend Python Dependencies
+        run: pip install -r track_2b/src/backend/requirements.txt
+
+      - name: Install Frontend Dependencies
+        working-directory: track_2b/src/frontend
+        run: npm ci
 
       - name: Lint Frontend (Oxlint)
         working-directory: track_2b/src/frontend
