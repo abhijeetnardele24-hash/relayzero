@@ -111,3 +111,65 @@ def test_api_cluster_resolution_persistence():
     loc_c2 = next(c for c in reproc_res.json()["clusters"] if c["field"] == "location_primary")
     assert loc_c2["status"] == "operator_confirmed"
     assert loc_c2["reconciled_value"] == "Gotthard North Portal (Confirmed by Command)"
+
+
+def test_api_additional_endpoints_coverage():
+    # 1. Presets list
+    presets_res = client.get("/api/presets")
+    assert presets_res.status_code == 200
+    presets = presets_res.json()
+    assert len(presets) >= 1
+
+    # 2. Preset load 404
+    bad_preset = client.post("/api/presets/non_existent_preset/load")
+    assert bad_preset.status_code == 404
+
+    # 3. Incidents list & get
+    inc_list = client.get("/api/incidents")
+    assert inc_list.status_code == 200
+    assert len(inc_list.json()) >= 1
+
+    inc_get = client.get("/api/incidents/INC-2026-CH-01")
+    assert inc_get.status_code == 200
+    assert inc_get.json()["incident_id"] == "INC-2026-CH-01"
+
+    inc_404 = client.get("/api/incidents/INC-DOES-NOT-EXIST")
+    assert inc_404.status_code == 404
+
+    # 4. Process convenience endpoint
+    proc_convenience = client.post("/api/process", json={"preset_id": "alpine_tunnel_smoke"})
+    assert proc_convenience.status_code == 200
+
+    # 5. Operator claim actions (confirm, reject, edit)
+    client.post("/api/presets/alpine_tunnel_smoke/load")
+    client.post("/api/incidents/INC-2026-CH-01/process")
+    first_claim = client.get("/api/incidents/INC-2026-CH-01").json()["claims"][0]
+    cid = first_claim["claim_id"]
+
+    confirm_res = client.post(
+        "/api/incidents/INC-2026-CH-01/operator-action",
+        json={"action": "confirm_claim", "claim_id": cid, "operator_id": "OP-1"},
+    )
+    assert confirm_res.status_code == 200
+
+    reject_res = client.post(
+        "/api/incidents/INC-2026-CH-01/operator-action",
+        json={"action": "reject_claim", "claim_id": cid, "operator_id": "OP-1"},
+    )
+    assert reject_res.status_code == 200
+
+    edit_res = client.post(
+        "/api/incidents/INC-2026-CH-01/operator-action",
+        json={"action": "edit_claim", "claim_id": cid, "new_value": "Edited Value", "operator_id": "OP-1"},
+    )
+    assert edit_res.status_code == 200
+
+    # 6. Export bundle & Audit verification
+    export_res = client.get("/api/incidents/INC-2026-CH-01/export")
+    assert export_res.status_code == 200
+    assert "sha256_checksum" in export_res.json()
+
+    audit_verify_res = client.get("/api/incidents/INC-2026-CH-01/audit-verify")
+    assert audit_verify_res.status_code == 200
+    assert audit_verify_res.json()["chain_intact"] is True
+

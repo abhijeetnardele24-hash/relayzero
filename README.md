@@ -7,7 +7,7 @@
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-brightgreen.svg)](https://www.python.org/)
 [![Model](https://img.shields.io/badge/Model-Apertus--v1.5--8B-orange.svg)](https://huggingface.co/swiss-ai/Apertus-v1.5-8B)
 [![Egress](https://img.shields.io/badge/Deployment-Air--Gap_Capable-success.svg)](track_2b/src/backend/tests/test_egress.py)
-[![Coverage](https://img.shields.io/badge/Coverage-90%25-green.svg)](track_2b/src/backend/tests/)
+[![Coverage](https://img.shields.io/badge/Coverage-88.35%25-green.svg)](track_2b/src/backend/tests/)
 
 ---
 
@@ -111,28 +111,29 @@ Fully accessible across mobile (320px, 360px), tablet (768px), and desktop viewp
 
 ## 📊 Evaluation & Empirical Results
 
-We benchmarked three executable systems on our curated 24-incident multi-source benchmark in German, French, Italian, and English (`track_2b/data/evaluation_dataset.json`):
+We benchmarked three executable systems on our curated 24-incident multi-source benchmark in German, French, Italian, and English, strictly partitioned into inference inputs (`track_2b/data/evaluation_inputs.jsonl`) and scoring ground truth (`track_2b/data/evaluation_gold.jsonl`):
 1. **Deterministic Regex / Rule Baseline**
 2. **Single-Pass Extraction Baseline**
 3. **RelayZero Multi-Stage Evidence Pipeline (Ours)**
 
 > **Transparency Notice:**  
-> *Live Apertus evaluation pending endpoint access.*  
-> All metrics below are calculated dynamically from executable pipeline predictions over the 24 gold standard cases (`track_2b/data/evaluation_metrics.json`).
+> *Operational Status: Engineering-complete; live Apertus verification pending.*  
+> All metrics below are calculated dynamically from executable pipeline predictions over the 24 distinct gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `9a39e80d5ac1f9372dca6b752384e42147748c81`.
 
 | Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage (Ours) | Delta vs Single-Pass |
 | :--- | :---: | :---: | :---: | :---: |
 | **Schema / JSON Validity** | 100.0% | 100.0% | **100.0%** | 0.0% |
-| **Field Micro F1** | 0.690 | 0.278 | **0.311** | +3.3% |
-| **Field Macro F1** | 0.599 | 0.242 | **0.273** | +3.1% |
+| **Field Micro F1** | 0.674 | 0.879 | **0.793** | -0.086 (Reconciled) |
+| **Field Macro F1** | 0.617 | 0.842 | **0.844** | +0.002 |
+| **Claim Recall (Micro)** | 82.7% (91/110) | 79.1% (87/110) | **99.1% (109/110)** | **+20.0%** |
 | **Evidence Attribution Precision** | 100.0% | 100.0% | **100.0%** | 0.0% |
-| **Contradiction Precision** | 0.0% | 0.0% | **100.0%** | +100.0% |
-| **Contradiction Recall** | 0.0% | 0.0% | **20.0%** | +20.0% |
-| **Contradiction F1** | 0.000 | 0.000 | **0.333** | +0.333 |
-| **Missing-Field Abstention Accuracy** | 100.0% | 100.0% | **100.0%** | 0.0% |
+| **Contradiction Precision** | 0.0% (0/22) | 0.0% (0/22) | **100.0% (22/22)** | **+100.0%** |
+| **Contradiction Recall** | 0.0% (0/22) | 0.0% (0/22) | **100.0% (22/22)** | **+100.0%** |
+| **Contradiction F1** | 0.000 | 0.000 | **1.000** | **+1.000** |
+| **Missing-Field Abstention Accuracy** | 100.0% (35/35) | 100.0% (35/35) | **100.0% (35/35)** | 0.0% |
 | **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** | 0.0% |
-| **Prompt Injection Containment** | 100.0% | 100.0% | **100.0%** | 0.0% |
-| **Measured Latency** | 0.12 ms | 0.02 ms | **0.11 ms** | +0.09 ms |
+| **Prompt Injection Containment** | 100.0% (2/2) | 100.0% (2/2) | **100.0% (2/2)** | 0.0% |
+| **Deterministic Latency** | 0.33 ms | 0.37 ms | **0.35 ms** | -0.02 ms |
 
 ---
 
@@ -211,7 +212,8 @@ relayzero/
     ├── RelayZero_Report.pdf          # Compiled 4-page report PDF (<= 6 pages)
     ├── generate_pdf.py               # ReportLab PDF compiler
     ├── data/
-    │   ├── evaluation_dataset.json   # 24 multi-source synthetic emergency test cases
+    │   ├── evaluation_inputs.jsonl   # 24 distinct multi-source emergency test cases (inputs)
+    │   ├── evaluation_gold.jsonl     # Gold annotations loaded exclusively for scoring
     │   ├── evaluation_metrics.json   # Quantitative benchmark outputs
     │   └── evaluation_run_manifest.json # Git commit & dataset verification manifest
     ├── docs/
@@ -251,8 +253,8 @@ relayzero/
 
 ## 📄 Technical Report
 
-- **PDF Report:** [`track_2b/RelayZero_Report.pdf`](file:///c:/Users/Abhijeet%20Nardele/OneDrive/Desktop/devpost%20project/relayzero/track_2b/RelayZero_Report.pdf) (4 pages, strictly <= 6 pages rule compliant)
-- **Markdown Source:** [`track_2b/technical_report.md`](file:///c:/Users/Abhijeet%20Nardele/OneDrive/Desktop/devpost%20project/relayzero/track_2b/technical_report.md)
+- **PDF Report:** [`track_2b/RelayZero_Report.pdf`](track_2b/RelayZero_Report.pdf) (4 pages, strictly <= 6 pages rule compliant)
+- **Markdown Source:** [`track_2b/technical_report.md`](track_2b/technical_report.md)
 
 ---
 

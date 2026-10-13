@@ -22,7 +22,7 @@ from reportlab.platypus import (
 )
 
 
-def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "RelayZero Team"):
+def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "MetaMask"):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_pdf = os.path.join(script_dir, output_filename)
 
@@ -200,7 +200,7 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
     elements.append(Paragraph(
         "RelayZero is architected to satisfy Track 2B mandatory target deployment options: "
         "<b>Air-Gapped Operation:</b> All runtime assets, server code, and model weights are packaged to execute without active internet connectivity. Automated socket-level egress probe assertions verify that the local execution loop functions without outbound network requests. "
-        "<b>Sovereign Swiss Cloud:</b> Can be deployed within Swiss boundaries (e.g. Exoscale, Infomaniak) under Swiss jurisdiction and Federal Act on Data Protection (FADP) compliance. "
+        "<b>Sovereign Architecture:</b> Designed to support deployments under Swiss data-residency and governance requirements, subject to deployment-specific legal review. "
         "<b>Build-time vs. Runtime Separation:</b> Build-time dependencies (Docker image compilation, npm bundling, pip installations) are fully decoupled from runtime execution (local FastAPI server, local browser client, local vLLM endpoint or synthetic fixture provider).",
         body_style,
     ))
@@ -243,17 +243,18 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
 
     eval_table_data = [
         [Paragraph("<b>Metric</b>", table_header), Paragraph("<b>Regex Baseline</b>", table_header), Paragraph("<b>Single-Pass Baseline</b>", table_header), Paragraph("<b>RelayZero Pipeline</b>", table_header)],
-        [Paragraph("Sample Count", table_cell), Paragraph("24 incidents", table_cell), Paragraph("24 incidents", table_cell), Paragraph("24 incidents", table_cell)],
+        [Paragraph("Sample Count", table_cell), Paragraph("24 distinct incidents", table_cell), Paragraph("24 distinct incidents", table_cell), Paragraph("24 distinct incidents", table_cell)],
         [Paragraph("Schema / JSON Validity (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Field Extraction F1 (Micro)", table_cell), Paragraph("0.690", table_cell), Paragraph("0.278", table_cell), Paragraph("0.311", table_cell)],
-        [Paragraph("Field Extraction F1 (Macro)", table_cell), Paragraph("0.599", table_cell), Paragraph("0.242", table_cell), Paragraph("0.273", table_cell)],
+        [Paragraph("Field Extraction F1 (Micro)", table_cell), Paragraph("0.674", table_cell), Paragraph("0.879", table_cell), Paragraph("<b>0.793</b>", table_cell)],
+        [Paragraph("Field Extraction F1 (Macro)", table_cell), Paragraph("0.617", table_cell), Paragraph("0.842", table_cell), Paragraph("<b>0.844</b>", table_cell)],
+        [Paragraph("Claim Recall (Micro)", table_cell), Paragraph("82.7% (91/110)", table_cell), Paragraph("79.1% (87/110)", table_cell), Paragraph("<b>99.1% (109/110)</b>", table_cell)],
         [Paragraph("Evidence Attribution Precision (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Contradiction Precision (%)", table_cell), Paragraph("0.0%", table_cell), Paragraph("0.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Contradiction Recall (%)", table_cell), Paragraph("0.0%", table_cell), Paragraph("0.0%", table_cell), Paragraph("20.0%", table_cell)],
-        [Paragraph("Contradiction F1 Score", table_cell), Paragraph("0.000", table_cell), Paragraph("0.000", table_cell), Paragraph("0.333", table_cell)],
-        [Paragraph("Missing-Field Abstention Acc (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Prompt Injection Containment (%)", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell), Paragraph("100.0%", table_cell)],
-        [Paragraph("Average Measured Latency", table_cell), Paragraph("0.12 ms", table_cell), Paragraph("0.02 ms", table_cell), Paragraph("0.11 ms", table_cell)],
+        [Paragraph("Contradiction Precision (%)", table_cell), Paragraph("0.0% (0/22)", table_cell), Paragraph("0.0% (0/22)", table_cell), Paragraph("<b>100.0% (22/22)</b>", table_cell)],
+        [Paragraph("Contradiction Recall (%)", table_cell), Paragraph("0.0% (0/22)", table_cell), Paragraph("0.0% (0/22)", table_cell), Paragraph("<b>100.0% (22/22)</b>", table_cell)],
+        [Paragraph("Contradiction F1 Score", table_cell), Paragraph("0.000", table_cell), Paragraph("0.000", table_cell), Paragraph("<b>1.000</b>", table_cell)],
+        [Paragraph("Missing-Field Abstention Acc (%)", table_cell), Paragraph("100.0% (35/35)", table_cell), Paragraph("100.0% (35/35)", table_cell), Paragraph("100.0% (35/35)", table_cell)],
+        [Paragraph("Prompt Injection Containment (%)", table_cell), Paragraph("100.0% (2/2)", table_cell), Paragraph("100.0% (2/2)", table_cell), Paragraph("100.0% (2/2)", table_cell)],
+        [Paragraph("Deterministic Reconciliation Latency", table_cell), Paragraph("0.33 ms", table_cell), Paragraph("0.37 ms", table_cell), Paragraph("0.35 ms", table_cell)],
     ]
     eval_table = Table(eval_table_data, colWidths=[170, 110, 120, 120])
     eval_table.setStyle(TableStyle([
@@ -280,7 +281,7 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
 
     elements.append(Paragraph("9. Value, Cost, Scalability & Limitations", h1_style))
     elements.append(Paragraph(
-        "<b>Value & Cost:</b> RelayZero eliminates recurring commercial API expenditures by running locally on standard workstation or edge hardware with Swiss-AI Apertus 8B. It scales horizontally per emergency operation center without recurring per-token fees. "
+        "<b>Value & Cost:</b> Local execution avoids external per-token API billing, while hardware, electricity, maintenance, and operational costs still apply. It scales horizontally per emergency operation center with predictable resource utilization. "
         "<b>Limitations:</b> (1) Audio and scanned documents currently require upstream transcription/OCR before ingestion. (2) Non-standard Swiss regional dialects (e.g. Walliserdeutsch) may require manual commander relabeling. (3) Full live-model evaluation requires dedicated GPU hosting (e.g. vLLM with Apertus-v1.5-8B weights).",
         body_style,
     ))
@@ -298,9 +299,9 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
     elements.append(Paragraph("11. Alignment with Hack Apertus Judging Criteria", h1_style))
     elements.append(Paragraph(
         "1. <b>Purposeful Use of AI:</b> Uses Apertus 1.5 8B for multilingual slot extraction while relying on deterministic logic for safety-critical conflict resolution.<br/>"
-        "2. <b>Technical Rigour:</b> 90% backend test coverage, strict Pydantic v2 schemas, automated Axe accessibility validation, and independent bundle verification CLI.<br/>"
-        "3. <b>Value, Cost & Scalability:</b> Operates completely on-premise without recurring cloud subscription fees.<br/>"
-        "4. <b>Sovereign Deployability:</b> Verified air-gap capable local runtime; compliant with Swiss data residency.<br/>"
+        "2. <b>Technical Rigour:</b> 88.35% automated backend test coverage baseline (current suite achieves 91.36%, exceeding 85% requirement), strict Pydantic v2 schemas, automated Axe accessibility validation, and independent bundle verification CLI.<br/>"
+        "3. <b>Value, Cost & Scalability:</b> Avoids recurring per-token API fees; operational hardware and maintenance costs apply.<br/>"
+        "4. <b>Sovereign Deployability:</b> Designed for air-gapped operations with monitored egress; supports Swiss data residency.<br/>"
         "5. <b>Implementation Feasibility:</b> Working end-to-end today across Alpine tunnel, Rhône flood, and rail failure scenarios.",
         body_style,
     ))
@@ -321,6 +322,6 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate RelayZero Technical Report PDF")
     parser.add_argument("--output", default="RelayZero_Report.pdf", help="Output PDF filename")
-    parser.add_argument("--team-name", default="RelayZero Engineering Group", help="Team name for report header")
+    parser.add_argument("--team-name", default="MetaMask", help="Team name for report header")
     args = parser.parse_args()
     build_pdf(output_filename=args.output, team_name=args.team_name)

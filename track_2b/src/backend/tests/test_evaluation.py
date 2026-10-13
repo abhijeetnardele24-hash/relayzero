@@ -225,3 +225,158 @@ def test_verify_bundle_file_invalid_paths_and_tampering():
         res = verify_bundle_file(f.name)
         assert res["valid"] is False
         assert "Checksum mismatch" in res["error"]
+
+
+def test_verify_bundle_cli_execution(monkeypatch, tmp_path):
+    import sys
+    from track_2b.src.backend.verify_bundle import main as bundle_main
+    from track_2b.src.backend.pipeline import IncidentPipeline
+    from track_2b.src.backend.audit import AuditLogger
+    from track_2b.src.backend.presets import get_synthetic_presets
+
+    inc = get_synthetic_presets()[0]
+    audit = AuditLogger()
+    audit.log("EXPORT", "System", {"info": "test"})
+    bundle = IncidentPipeline().execute_stage_d_export(inc, audit)
+
+    bundle_path = tmp_path / "test_bundle.json"
+    bundle_path.write_text(bundle.model_dump_json(indent=2), encoding="utf-8")
+
+    # Test usage exit
+    monkeypatch.setattr(sys, "argv", ["verify_bundle.py"])
+    with pytest.raises(SystemExit) as exc_info:
+        bundle_main()
+    assert exc_info.value.code == 1
+
+    # Test successful verification
+    monkeypatch.setattr(sys, "argv", ["verify_bundle.py", str(bundle_path)])
+    with pytest.raises(SystemExit) as exc_info:
+        bundle_main()
+    assert exc_info.value.code == 0
+
+
+def test_documented_metrics_consistency():
+    """Asserts that documented headline metrics in technical documentation exactly match evaluation_metrics.json."""
+    metrics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "evaluation_metrics.json"))
+    with open(metrics_path, "r", encoding="utf-8") as f:
+        metrics_data = json.load(f)
+
+    rz_metrics = next(r for r in metrics_data["results"] if "RelayZero" in r["system_name"])
+    assert rz_metrics["field_f1_micro"] == 0.793
+    assert rz_metrics["field_f1_macro"] == 0.844
+    assert rz_metrics["contradiction_f1"] == 1.0
+    assert rz_metrics["contradiction_tp"] == 22
+    assert rz_metrics["contradiction_gold_count"] == 22
+
+    # Verify SUBMISSION_HANDOFF.md contains exact headline metrics
+    handoff_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "SUBMISSION_HANDOFF.md"))
+    if os.path.exists(handoff_path):
+        with open(handoff_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            assert "0.793" in content, "SUBMISSION_HANDOFF.md must cite exact RelayZero micro F1 (0.793)"
+            assert "0.844" in content, "SUBMISSION_HANDOFF.md must cite exact RelayZero macro F1 (0.844)"
+            assert "1.000" in content or "1.0" in content, "SUBMISSION_HANDOFF.md must cite contradiction F1"
+
+
+
+def test_24_distinct_incidents_uniqueness():
+    """Verifies that all 24 evaluation incidents are genuinely distinct without repetition."""
+    raw_defs = load_raw_benchmark_definitions()
+    assert len(raw_defs) == 24
+
+    incident_ids = [item["incident_id"] for item in raw_defs]
+    assert len(set(incident_ids)) == 24, "Incident IDs must all be unique!"
+
+    for inc_id in incident_ids:
+        assert not any(inc_id.endswith(sfx) for sfx in ["-B1", "-B2", "-B3", "-B4"]), f"Repeated suffix found in {inc_id}!"
+
+    scenarios = [item["scenario"] for item in raw_defs]
+    assert len(set(scenarios)) == 24, "All 24 scenario titles must be distinct!"
+
+
+def test_no_combined_gold_dataset_exists():
+    """Verifies that the deprecated combined evaluation_dataset.json does not exist on disk."""
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+    combined_file = os.path.join(data_dir, "evaluation_dataset.json")
+    assert not os.path.exists(combined_file), "Forbidden combined evaluation_dataset.json must NOT exist on disk!"
+
+
+def test_contradiction_detection_generalized():
+    """Verifies that ReconciliationEngine correctly flags generalized cross-source contradictions."""
+    from track_2b.src.backend.reconciliation import ReconciliationEngine
+    from track_2b.src.backend.schemas import (
+        ExtractedClaim,
+        EvidenceSpan,
+        LanguageEnum,
+        ExtractionStatusEnum,
+        OperatorClaimStatusEnum,
+        ClusterStatusEnum,
+    )
+
+    engine = ReconciliationEngine()
+
+    # 1. Cardinal direction conflict
+    c1 = ExtractedClaim(
+        claim_id="C1", incident_id="I1", source_id="S1", field="location_primary",
+        normalized_value="Gotthard North Portal", original_value="Nordportal",
+        evidence_span=EvidenceSpan(exact_quote="Nordportal", start_char=0, end_char=10),
+        language=LanguageEnum.DE, extraction_status=ExtractionStatusEnum.ACCEPTED,
+        operator_status=OperatorClaimStatusEnum.UNREVIEWED, model_name="fixture",
+        prompt_version="v1", timestamp="2026-10-12T00:00:00Z"
+    )
+    c2 = ExtractedClaim(
+        claim_id="C2", incident_id="I1", source_id="S2", field="location_primary",
+        normalized_value="Gotthard South Portal", original_value="portail sud",
+        evidence_span=EvidenceSpan(exact_quote="portail sud", start_char=0, end_char=11),
+        language=LanguageEnum.FR, extraction_status=ExtractionStatusEnum.ACCEPTED,
+        operator_status=OperatorClaimStatusEnum.UNREVIEWED, model_name="fixture",
+        prompt_version="v1", timestamp="2026-10-12T00:00:00Z"
+    )
+    clusters, _ = engine.reconcile([c1, c2])
+    loc_cluster = next(c for c in clusters if c.field == "location_primary")
+    assert loc_cluster.status == ClusterStatusEnum.CONFLICTING
+    assert loc_cluster.reconciled_value is None
+
+    # 2. Mutually exclusive target conflict (B2 vs C4)
+    c3 = ExtractedClaim(
+        claim_id="C3", incident_id="I2", source_id="S1", field="location_primary",
+        normalized_value="Monthey bâtiment B2", original_value="bâtiment B2",
+        evidence_span=EvidenceSpan(exact_quote="bâtiment B2", start_char=0, end_char=11),
+        language=LanguageEnum.FR, extraction_status=ExtractionStatusEnum.ACCEPTED,
+        operator_status=OperatorClaimStatusEnum.UNREVIEWED, model_name="fixture",
+        prompt_version="v1", timestamp="2026-10-12T00:00:00Z"
+    )
+    c4 = ExtractedClaim(
+        claim_id="C4", incident_id="I2", source_id="S2", field="location_primary",
+        normalized_value="Monthey building C4", original_value="building C4",
+        evidence_span=EvidenceSpan(exact_quote="building C4", start_char=0, end_char=11),
+        language=LanguageEnum.EN, extraction_status=ExtractionStatusEnum.ACCEPTED,
+        operator_status=OperatorClaimStatusEnum.UNREVIEWED, model_name="fixture",
+        prompt_version="v1", timestamp="2026-10-12T00:00:00Z"
+    )
+    clusters, _ = engine.reconcile([c3, c4])
+    loc_cluster2 = next(c for c in clusters if c.field == "location_primary")
+    assert loc_cluster2.status == ClusterStatusEnum.CONFLICTING
+
+    # 3. Corroborating claims
+    c5 = ExtractedClaim(
+        claim_id="C5", incident_id="I3", source_id="S1", field="location_primary",
+        normalized_value="Olten-Bern line km 28", original_value="km 28",
+        evidence_span=EvidenceSpan(exact_quote="km 28", start_char=0, end_char=5),
+        language=LanguageEnum.DE, extraction_status=ExtractionStatusEnum.ACCEPTED,
+        operator_status=OperatorClaimStatusEnum.UNREVIEWED, model_name="fixture",
+        prompt_version="v1", timestamp="2026-10-12T00:00:00Z"
+    )
+    c6 = ExtractedClaim(
+        claim_id="C6", incident_id="I3", source_id="S2", field="location_primary",
+        normalized_value="Olten-Bern line km 28", original_value="line km 28",
+        evidence_span=EvidenceSpan(exact_quote="line km 28", start_char=0, end_char=10),
+        language=LanguageEnum.EN, extraction_status=ExtractionStatusEnum.ACCEPTED,
+        operator_status=OperatorClaimStatusEnum.UNREVIEWED, model_name="fixture",
+        prompt_version="v1", timestamp="2026-10-12T00:00:00Z"
+    )
+    clusters, _ = engine.reconcile([c5, c6])
+    loc_cluster3 = next(c for c in clusters if c.field == "location_primary")
+    assert loc_cluster3.status == ClusterStatusEnum.CORROBORATED
+    assert loc_cluster3.reconciled_value == "Olten-Bern line km 28"
+

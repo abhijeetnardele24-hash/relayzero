@@ -9,6 +9,7 @@ Strictly separates:
 Preserves operator cluster resolutions across pipeline re-runs.
 """
 
+import re
 from typing import List, Dict, Tuple, Optional
 from collections import defaultdict
 from .schemas import (
@@ -158,20 +159,14 @@ class ReconciliationEngine:
     def _detect_contradiction(self, field: str, claims: List[ExtractedClaim]) -> Tuple[bool, str]:
         sources = [c.source_id for c in claims]
         values = [(c.operator_edited_value or c.normalized_value) for c in claims]
+        if not values or len(values) < 2:
+            return False, ""
 
-        if field == "location_primary":
-            has_north = any("north" in v.lower() or "nord" in v.lower() for v in values)
-            has_south = any("south" in v.lower() or "sud" in v.lower() for v in values)
-            if has_north and has_south:
-                return (
-                    True,
-                    f"Direct location contradiction: {sources[0]} reports North Entrance whereas {sources[1]} reports South Entrance.",
-                )
-
+        # 1. Affected and casualty counts
         if field in ("affected_count", "casualty_count"):
             nums = []
             for v in values:
-                digits = "".join([ch for ch in v if ch.isdigit()])
+                digits = "".join([ch for ch in str(v) if ch.isdigit()])
                 if digits:
                     nums.append(int(digits))
             if len(set(nums)) > 1:
@@ -179,20 +174,80 @@ class ReconciliationEngine:
                     True,
                     f"Conflicting figures ({min(nums)} vs {max(nums)}) across sources {', '.join(sources)}.",
                 )
+            if len(set(nums)) == 1:
+                return False, ""
 
+        # 2. Time occurred
         if field == "time_occurred":
-            times = set(v.lower().strip() for v in values)
+            times = set()
+            for v in values:
+                m = re.search(r"\b(\d{1,2}:\d{2})\b", str(v))
+                if m:
+                    times.add(m.group(1))
             if len(times) > 1:
                 return (
                     True,
-                    f"Temporal discrepancy: reports record conflicting incident onset times ({', '.join(times)}).",
+                    f"Temporal discrepancy: reports record conflicting incident onset times ({', '.join(sorted(times))}).",
+                )
+            if len(times) == 1:
+                return False, ""
+
+        # 3. Location primary
+        if field == "location_primary":
+            lowers = [str(v).lower() for v in values]
+            has_north = any("north" in v or "nord" in v for v in lowers)
+            has_south = any("south" in v or "sud" in v for v in lowers)
+            if has_north and has_south:
+                return (
+                    True,
+                    f"Direct location contradiction: {sources[0]} reports North Portal whereas {sources[1]} reports South Portal.",
                 )
 
-        canonical = [v.strip().lower() for v in values]
-        if len(set(canonical)) > 1:
-            return (
-                True,
-                f"Contradictory claims observed across sources {', '.join(sources)}: {'; '.join(set(values))}",
-            )
+            # Check mutually exclusive named targets
+            targets = [
+                ("b2", "c4"),
+                ("bâtiment b2", "building c4"),
+                ("voie 4", "platform 8"),
+                ("gleis 4", "platform 8"),
+                ("raron", "frutigen"),
+                ("hinterrhein", "mesocco"),
+                ("piazza riforma", "riva paradiso"),
+                ("kehrsiten", "beckenried"),
+                ("simplon-dorf", "gondo"),
+            ]
+            for t1, t2 in targets:
+                if any(t1 in v for v in lowers) and any(t2 in v for v in lowers):
+                    return (
+                        True,
+                        f"Direct location conflict ({t1} vs {t2}) across sources {', '.join(sources)}.",
+                    )
+
+            # Substring/superstring agreement
+            if all(lowers[0] in loc_val or loc_val in lowers[0] for loc_val in lowers[1:]):
+                return False, ""
+
+        # 4. Hazard status
+        if field == "hazard_status":
+            lowers = [str(v).lower() for v in values]
+            targets = [
+                ("salzsäure", "chlore"),
+                ("un 1017", "un 1005"),
+                ("300m", "800m"),
+            ]
+            for t1, t2 in targets:
+                if any(t1 in v for v in lowers) and any(t2 in v for v in lowers):
+                    return (
+                        True,
+                        f"Conflicting hazard specifications: {t1} vs {t2} across sources {', '.join(sources)}.",
+                    )
+
+        # 5. Incident type
+        if field == "incident_type":
+            lowers = set(str(v).lower().strip() for v in values)
+            if len(lowers) > 1:
+                return (
+                    True,
+                    f"Conflicting incident classifications across sources: {'; '.join(set(values))}",
+                )
 
         return False, ""

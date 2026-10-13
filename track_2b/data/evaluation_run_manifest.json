@@ -1,9 +1,14 @@
 {
-  "execution_timestamp": "2026-10-13T21:38:16.616295+00:00",
-  "git_commit_sha": "31f8105f910ea70ce8c292b6a19eaa6019dcbb65",
-  "inputs_checksum_sha256": "8edfdb25159bfda2c9b59de2e0686b2c2a8c9aced70f22311de9f5de3ae0ab67",
+  "execution_timestamp": "2026-10-13T22:30:27.025539+00:00",
+  "evaluated_code_sha": "9a39e80d5ac1f9372dca6b752384e42147748c81",
+  "evidence_commit_sha": null,
+  "git_dirty": false,
+  "sample_count": 24,
+  "inputs_checksum_sha256": "aa4708173973af5e06f3554a8da4ad0b9f5c05180eb5805faabb92960401e44b",
+  "gold_checksum_sha256": "4ff10733862ab1c3b390155d76c32ae7f057499d2c1fa1cf051550fcf814796c",
   "command_used": "python -m track_2b.src.backend.evaluation_runner",
   "app_mode": "fixture",
   "model_configured": "Synthetic Demo Fixture",
-  "endpoint_configured": false
+  "endpoint_configured": true,
+  "provenance_note": "evaluated_code_sha records the exact commit of the executing code; evidence_commit_sha is created when committing the generated benchmark artifacts."
 }

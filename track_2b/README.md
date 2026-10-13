@@ -7,7 +7,7 @@
 - **Target Model:** `swiss-ai/Apertus-v1.5-8B`
 - **Target Architecture:** Air-Gapped (Mandatory) / On-Premise / Sovereign Swiss Cloud
 - **Repository:** https://github.com/abhijeetnardele24-hash/relayzero
-- **Technical Report:** [`RelayZero_Report.pdf`](file:///c:/Users/Abhijeet%20Nardele/OneDrive/Desktop/devpost%20project/relayzero/track_2b/RelayZero_Report.pdf) (4 pages, within official 6 pages limit)
+- **Technical Report:** [`RelayZero_Report.pdf`](RelayZero_Report.pdf) (4 pages, within official 6 pages limit)
 
 ---
 
@@ -21,14 +21,15 @@
    - `RelayZero_Report.pdf`: Compiled 4-page PDF report.
 3. **Data (`data/`):**
    - Total data size: ~27 KB (strictly under the 100 MB limit).
-   - `data/evaluation_dataset.json`: 24 multi-source synthetic emergency incidents in DE, FR, IT, and EN.
+   - `data/evaluation_inputs.jsonl`: 24 distinct multi-source synthetic emergency incidents in DE, FR, IT, and EN for inference.
+   - `data/evaluation_gold.jsonl`: Ground-truth claims, contradictions, and missing fields strictly loaded for scoring.
    - `data/evaluation_metrics.json`: Quantitative benchmark outputs calculated from executable pipelines.
    - `data/evaluation_run_manifest.json`: Execution manifest with Git commit SHA and dataset checksums.
 4. **Documentation & Screenshots (`docs/`):**
    - Architecture, Threat Model, Evaluation, Demo Script, and High-Resolution Screenshots.
 5. **Reproducibility:**
    - `make run`: Starts the project from clean checkout.
-   - `make test`: Runs 90% coverage unit, integration, and socket isolation tests (`--cov-fail-under=85`).
+   - `make test`: Runs automated test suite (baseline 88.35% coverage, current suite achieves 91.36%, `--cov-fail-under=85`).
    - `make eval`: Runs the evaluation benchmark (`python track_2b/src/backend/evaluation_runner.py`).
 
 ---

@@ -37,6 +37,25 @@ jobs:
           export PYTHONPATH=.
           pytest track_2b/src/backend/tests -v -o asyncio_mode=auto --cov=track_2b/src/backend --cov-report=term --cov-fail-under=85
 
+      - name: Verify Physical Gold-Separation & Zero Leakage Invariants
+        run: |
+          python -c "
+          import os, json
+          # 1. Assert deprecated combined dataset is completely removed
+          assert not os.path.exists('track_2b/data/evaluation_dataset.json'), 'Deprecated combined evaluation_dataset.json must NOT exist!'
+          
+          # 2. Assert evaluation_inputs.jsonl contains ZERO gold fields
+          with open('track_2b/data/evaluation_inputs.jsonl', encoding='utf-8') as f:
+              for line in f:
+                  data = json.loads(line)
+                  for forbidden in ['gold_claims', 'gold_contradictions', 'gold_missing_critical']:
+                      assert forbidden not in data, f'Forbidden field {forbidden} found in inputs!'
+
+          # 3. Assert evaluation_gold.jsonl exists
+          assert os.path.exists('track_2b/data/evaluation_gold.jsonl'), 'evaluation_gold.jsonl must exist!'
+          print('Physical gold-separation verified: zero gold fields in inputs, combined file absent.')
+          "
+
       - name: Run Evaluation Benchmark
         run: |
           python track_2b/src/backend/evaluation_runner.py

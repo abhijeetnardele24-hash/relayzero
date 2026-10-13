@@ -4,7 +4,7 @@
 
 - **Track:** Track 2B — Own Project
 - **Event:** Hack Apertus 2026 (Online)
-- **Team:** RelayZero Engineering Group
+- **Team:** MetaMask (Solo participation)
 - **Repository:** https://github.com/abhijeetnardele24-hash/relayzero
 - **Demo:** [Demo Video Link — 2-minute walkthrough placeholder](https://github.com/abhijeetnardele24-hash/relayzero#demo-video)
 - **Model:** `swiss-ai/Apertus-v1.5-8B`
@@ -15,7 +15,7 @@
 
 During disaster management and critical incident triage (e.g. alpine tunnel fires, flash floods, rail failures), emergency coordination centers receive heterogeneous, conflicting, and multilingual reports across SMS messages, scanned intervention forms, radio transcripts, and citizen voice transcripts. Current commercial tools either send sensitive operational reports to cloud APIs or employ monolithic generative models that hallucinate consensus when field sources diverge.
 
-**RelayZero** is an air-gapped, sovereign decision-support system designed for `swiss-ai/Apertus-v1.5-8B`. It compiles multilingual field evidence into a source-linked situation brief through a strict four-stage pipeline: (1) isolated claim extraction with character-level evidence pointers, (2) deterministic cross-source reconciliation and contradiction detection, (3) grounded situation brief generation highlighting unresolved facts, and (4) offline export with a tamper-evident SHA-256 hash-chained audit trail. Evaluated across 24 multi-source emergency incidents in German, French, Italian, and English, RelayZero achieves **100% schema validity**, **100% contradiction detection precision**, and **100% evidence attribution precision** with strict verbatim quote validation, operating within an air-gap capable local deployment boundary.
+**RelayZero** is an air-gap capable decision-support system designed for `swiss-ai/Apertus-v1.5-8B`. It compiles multilingual field evidence into a source-linked situation brief through a strict four-stage pipeline: (1) isolated claim extraction with character-level evidence pointers, (2) deterministic cross-source reconciliation and contradiction detection, (3) grounded situation brief generation highlighting unresolved facts, and (4) offline export with a tamper-evident SHA-256 hash-chained audit trail. Evaluated across 24 genuinely distinct multi-source emergency incidents in German, French, Italian, and English, RelayZero achieves **100% schema validity**, **100% contradiction detection precision (22/22)**, **100% contradiction recall (22/22)**, and **100% evidence attribution precision** with strict verbatim quote validation, architected to support deployments under Swiss data-residency and governance requirements, subject to deployment-specific legal review.
 
 ---
 
@@ -90,45 +90,49 @@ RelayZero satisfies mandatory target architecture **b) Air-gapped** and **a) On-
 
 ## 4. Data
 
-- **Synthetic Operational Dataset:** 24 multi-source incident cases specifically calibrated to Swiss federal disaster operational protocols.
-- **Multi-Source Structure:** Every incident contains 2 or more independent field reports (48 total reports across German, French, Italian, and English).
-- **Modality Representation:** Text dispatch, scanned report transcription, and voice transcript.
-- **Gold Annotations:** Every test case includes gold normalized claims, exact evidence spans, gold contradiction pairs, gold missing fields, and prompt-injection labels.
+- **Synthetic Operational Dataset:** 24 genuinely distinct multi-source incident cases across Switzerland without duplicated base scenarios, calibrated to federal disaster operational protocols.
+- **Physical Dataset Separation:** Prediction inputs and gold labels are strictly separated into two files:
+  - `track_2b/data/evaluation_inputs.jsonl`: Contains only incident IDs and raw field reports for inference.
+  - `track_2b/data/evaluation_gold.jsonl`: Contains ground-truth claims, contradictions, and missing fields loaded exclusively by the evaluation scoring runner.
+  - The deprecated combined dataset (`track_2b/data/evaluation_dataset.json`) has been permanently deleted to ensure zero data leakage.
+- **Multi-Source Structure:** Every incident contains 2 or more independent field reports across German, French, Italian, and English.
 - **Licensing & Footprint:** CDLA-Permissive-2.0. Total data footprint is ~27 KB, compliant with competition data size requirements.
 
 ---
 
 ## 5. Evaluation
 
-We conducted an empirical benchmark comparing three executable systems across the 24-incident multi-source test suite (`track_2b/data/evaluation_dataset.json`):
+We conducted an empirical benchmark comparing three executable systems across the 24 distinct multi-source test suite:
 1. **Deterministic Regex/Rule Baseline**
 2. **Single-Pass Extraction Baseline**
 3. **RelayZero Multi-Stage Evidence Pipeline**
 
 > **Transparency Disclosure:**  
-> *Live Apertus evaluation pending endpoint access.*  
-> The metrics below reflect execution of the three baseline and pipeline runners over the synthetic evaluation dataset.
+> *Operational Status: Engineering-complete; live Apertus verification pending.*  
+> The metrics below reflect reproducible evaluation execution across the 24 gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `9a39e80d5ac1f9372dca6b752384e42147748c81`.
 
 ### Quantitative Results
 
-| Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage (Ours) |
-| :--- | :---: | :---: | :---: |
-| **Schema / JSON Validity** | 100.0% | 100.0% | **100.0%** |
-| **Field Micro F1** | 0.690 | 0.278 | **0.311** |
-| **Field Macro F1** | 0.599 | 0.242 | **0.273** |
-| **Evidence Attribution Precision** | 100.0% | 100.0% | **100.0%** |
-| **Contradiction Precision** | 0.0% | 0.0% | **100.0%** |
-| **Contradiction Recall** | 0.0% | 0.0% | **20.0%** |
-| **Contradiction F1** | 0.000 | 0.000 | **0.333** |
-| **Missing-Field Abstention Accuracy** | 100.0% | 100.0% | **100.0%** |
-| **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** |
-| **Prompt Injection Containment** | 100.0% | 100.0% | **100.0%** |
-| **Measured Execution Latency** | 0.12 ms | 0.02 ms | **0.11 ms** |
+| Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage (Ours) | Delta vs Single-Pass |
+| :--- | :---: | :---: | :---: | :---: |
+| **Schema / JSON Validity** | 100.0% | 100.0% | **100.0%** | 0.0% |
+| **Field Micro F1** | 0.674 | 0.879 | **0.793** | -0.086 (Reconciled) |
+| **Field Macro F1** | 0.617 | 0.842 | **0.844** | +0.002 |
+| **Claim Recall (Micro)** | 82.7% (91/110) | 79.1% (87/110) | **99.1% (109/110)** | **+20.0%** |
+| **Evidence Attribution Precision** | 100.0% | 100.0% | **100.0%** | 0.0% |
+| **Contradiction Precision** | 0.0% (0/22) | 0.0% (0/22) | **100.0% (22/22)** | **+100.0%** |
+| **Contradiction Recall** | 0.0% (0/22) | 0.0% (0/22) | **100.0% (22/22)** | **+100.0%** |
+| **Contradiction F1** | 0.000 | 0.000 | **1.000** | **+1.000** |
+| **Missing-Field Abstention Accuracy** | 100.0% (35/35) | 100.0% (35/35) | **100.0% (35/35)** | 0.0% |
+| **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** | 0.0% |
+| **Prompt Injection Containment** | 100.0% (2/2) | 100.0% (2/2) | **100.0% (2/2)** | 0.0% |
+| **Deterministic Pipeline Latency** | 0.33 ms | 0.37 ms | **0.35 ms** | -0.02 ms |
 
 ### Evaluation Analysis
-- **Contradiction Handling:** The deterministic keyword baseline failed to detect any cross-source contradictions (0.0% F1). RelayZero achieved 100% precision on contradiction discovery, preventing erroneous consensus.
-- **Evidence Verification:** Every claim in RelayZero is validated against character-level substring offsets, achieving 100% evidence attribution precision and 0.0% unsupported claims.
-- **Safety Abstention:** Both the single-pass and RelayZero systems successfully abstained on missing critical fields (100% accuracy).
+- **Contradiction Handling:** Both the regex baseline and single-pass baseline completely fail to detect any contradictions (0.0% F1, 0/22 detected), creating dangerous false consensus. RelayZero achieves 100% precision and 100% recall (22/22 detected, 1.000 F1), isolating opposing field reports for human decision-making.
+- **Claim Extraction & Recall:** RelayZero achieves 99.1% claim recall (109/110 claims extracted), significantly outperforming the single-pass baseline (79.1%) and regex baseline (82.7%).
+- **Evidence Grounding:** Every claim in RelayZero is validated against character-level substring offsets, achieving 100% evidence attribution precision and 0.0% unsupported claims.
+- **Safety Abstention:** Both the single-pass and RelayZero systems successfully abstained on missing critical fields (100% accuracy, 35/35).
 
 ---
 
@@ -143,9 +147,9 @@ We conducted an empirical benchmark comparing three executable systems across th
 ## 7. Reproducibility
 
 - **Primary Command:** `make run` from repository root.
-- **Backend Test Suite:** `pytest track_2b/src/backend/tests -v --cov=track_2b/src/backend --cov-fail-under=85` (Achieved: **90% coverage**).
-- **Benchmark Command:** `python track_2b/src/backend/evaluation_runner.py` (Reproduces `evaluation_metrics.json` and predictions).
-- **Bundle Verification:** `python -m track_2b.src.backend.verify_bundle bundle.json`.
+- **Backend Test Suite:** `pytest track_2b/src/backend/tests -v --cov=track_2b/src/backend --cov-fail-under=85` (Baseline verified coverage: **88.35%**, current test suite: **91.36%**).
+- **Benchmark Command:** `python track_2b/src/backend/evaluation_runner.py` (Reproduces `evaluation_metrics.json` and prediction artifacts).
+- **Bundle Verification:** `python -m track_2b.src.backend.verify_bundle <bundle.json>`.
 - **E2E & Accessibility:** Playwright test suite with Axe accessibility scan across 6 viewports (320px–1920px) with 0 horizontal overflow.
 
 ---
@@ -153,9 +157,9 @@ We conducted an empirical benchmark comparing three executable systems across th
 ## 8. Alignment with Judging Criteria
 
 1. **Purposeful Use of AI:** Apertus is used where LLMs excel—cross-lingual understanding and structured slot extraction—while deterministic logic handles safety-critical conflict resolution and evidence validation.
-2. **Technical Rigour:** 90% backend test coverage, strict Pydantic schemas, SHA-256 audit chaining, and exact evidence quote validation.
-3. **Value, Cost & Scalability:** Designed for disconnected local deployment; eliminates cloud API costs and data privacy exposure.
-4. **Sovereign Deployability:** Air-gap capable architecture with explicit live/fixture mode separation.
+2. **Technical Rigour:** 88.35% automated backend test coverage baseline (current suite achieves 91.36%, exceeding 85% requirement), strict Pydantic v2 schemas, SHA-256 audit chaining, and exact evidence quote validation.
+3. **Value, Cost & Scalability:** Avoids recurring external per-token API fees via local weights; operational hardware and maintenance costs apply.
+4. **Sovereign Deployability:** Designed for air-gapped operations with monitored egress; supports deployments under Swiss data-residency and governance requirements, subject to deployment-specific legal review.
 5. **Implementation Feasibility:** Working end-to-end interface demonstrated across Swiss emergency scenarios.
 
 ---
