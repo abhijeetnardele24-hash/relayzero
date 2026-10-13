@@ -479,7 +479,7 @@ export default function App() {
                 </span>
               )}
               {missingClusters.length > 0 && (
-                <span className="status-chip" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc' }}>
+                <span className="status-chip" style={{ background: 'rgba(168, 85, 247, 0.25)', color: '#e9d5ff' }}>
                   {missingClusters.length} Missing
                 </span>
               )}
@@ -623,10 +623,10 @@ export default function App() {
             {missingClusters.map((cluster) => (
               <div key={cluster.cluster_id} className="cluster-group missing">
                 <div className="cluster-header">
-                  <span className="cluster-field-name" style={{ color: '#c084fc' }}>
+                  <span className="cluster-field-name" style={{ color: '#e9d5ff' }}>
                     ❓ {cluster.field.toUpperCase().replace('_', ' ')}
                   </span>
-                  <span className="status-chip" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc' }}>
+                  <span className="status-chip" style={{ background: 'rgba(168, 85, 247, 0.25)', color: '#e9d5ff' }}>
                     CRITICAL DATA GAP
                   </span>
                 </div>

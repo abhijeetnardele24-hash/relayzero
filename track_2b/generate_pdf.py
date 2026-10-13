@@ -6,7 +6,6 @@ strictly within the official 6-page limit, academic layout, working references).
 """
 
 import os
-import sys
 import argparse
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -68,17 +67,6 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "M
         spaceAfter=4,
     )
 
-    h2_style = ParagraphStyle(
-        "Heading2_Custom",
-        parent=styles["Heading3"],
-        fontName="Helvetica-Bold",
-        fontSize=10,
-        leading=13,
-        textColor=colors.HexColor("#1e293b"),
-        spaceBefore=8,
-        spaceAfter=3,
-    )
-
     body_style = ParagraphStyle(
         "Body_Custom",
         parent=styles["Normal"],
@@ -120,21 +108,21 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "M
 
     # ================= PAGE 1 =================
     elements.append(Paragraph("RelayZero: Air-Gapped Multilingual Multi-Source Incident-Brief Compiler", title_style))
-    elements.append(Paragraph(f"Source-Linked Fact Reconciliation for Swiss Emergency Operations — Hack Apertus 2026 (Track 2B)", subtitle_style))
+    elements.append(Paragraph("Source-Linked Fact Reconciliation for Swiss Emergency Operations — Hack Apertus 2026 (Track 2B)", subtitle_style))
     elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#cbd5e1"), spaceAfter=8))
 
     meta_data = [
         [
-            Paragraph(f"<b>Track:</b> Track 2B — Own Project", meta_style),
-            Paragraph(f"<b>Target Model:</b> swiss-ai/Apertus-v1.5-8B", meta_style),
+            Paragraph("<b>Track:</b> Track 2B — Own Project", meta_style),
+            Paragraph("<b>Target Model:</b> swiss-ai/Apertus-v1.5-8B", meta_style),
         ],
         [
             Paragraph(f"<b>Team:</b> {team_name}", meta_style),
-            Paragraph(f"<b>Target Architecture:</b> Air-Gapped / Sovereign Swiss Cloud", meta_style),
+            Paragraph("<b>Target Architecture:</b> Air-Gapped / Sovereign Swiss Cloud", meta_style),
         ],
         [
-            Paragraph(f"<b>Repository:</b> https://github.com/abhijeetnardele24-hash/relayzero", meta_style),
-            Paragraph(f"<b>Operational Status:</b> Live Endpoint Capable / Synthetic Demo Fixture", meta_style),
+            Paragraph("<b>Repository:</b> https://github.com/abhijeetnardele24-hash/relayzero", meta_style),
+            Paragraph("<b>Operational Status:</b> Live Endpoint Capable / Synthetic Demo Fixture", meta_style),
         ],
     ]
     meta_table = Table(meta_data, colWidths=[260, 260])
