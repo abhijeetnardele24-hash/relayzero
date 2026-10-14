@@ -10,7 +10,7 @@ test:
 	pytest src/backend/tests -v -o asyncio_mode=auto --cov=src/backend
 
 eval:
-	@echo "Running reproducible 48-incident evaluation benchmark..."
+	@echo "Running reproducible 24-incident evaluation benchmark..."
 	python src/backend/evaluation_runner.py
 
 build:

@@ -237,7 +237,7 @@ relayzero/
         │   ├── presets.py            # Alpine tunnel, flood, and rail presets
         │   ├── schemas.py            # Pydantic v2 data contracts
         │   ├── main.py               # REST API endpoints with safety gates
-        │   └── tests/                # Automated pytest suite (90% coverage)
+        │   └── tests/                # Automated pytest suite (93.53% coverage)
         └── frontend/                 # React + TypeScript + Vite UI
             ├── src/App.tsx           # Field Operations Folio application
             ├── src/index.css         # Tactical operations design system
