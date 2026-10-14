@@ -21,7 +21,7 @@ from reportlab.platypus import (
 )
 
 
-def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "MetaMask"):
+def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "RelayZero Labs"):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_pdf = os.path.join(script_dir, output_filename)
 
@@ -122,7 +122,7 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "M
         ],
         [
             Paragraph("<b>Repository:</b> https://github.com/abhijeetnardele24-hash/relayzero", meta_style),
-            Paragraph("<b>Operational Status:</b> Live Endpoint Capable / Synthetic Demo Fixture", meta_style),
+            Paragraph("<b>Operational Status:</b> Live Apertus verified; full benchmark fixture-based", meta_style),
         ],
     ]
     meta_table = Table(meta_data, colWidths=[260, 260])
@@ -287,7 +287,7 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "M
     elements.append(Paragraph("11. Alignment with Hack Apertus Judging Criteria", h1_style))
     elements.append(Paragraph(
         "1. <b>Purposeful Use of AI:</b> Uses Apertus 1.5 8B for multilingual slot extraction while relying on deterministic logic for safety-critical conflict resolution.<br/>"
-        "2. <b>Technical Rigour:</b> 88.35% automated backend test coverage baseline (current suite achieves 91.36%, exceeding 85% requirement), strict Pydantic v2 schemas, automated Axe accessibility validation, and independent bundle verification CLI.<br/>"
+        "2. <b>Technical Rigour:</b> 36 passing automated tests with 93.53% backend coverage (exceeding 85% requirement), strict Pydantic v2 schemas, automated Axe accessibility validation, and independent bundle verification CLI.<br/>"
         "3. <b>Value, Cost & Scalability:</b> Avoids recurring per-token API fees; operational hardware and maintenance costs apply.<br/>"
         "4. <b>Sovereign Deployability:</b> Designed for air-gapped operations with monitored egress; supports Swiss data residency.<br/>"
         "5. <b>Implementation Feasibility:</b> Working end-to-end today across Alpine tunnel, Rhône flood, and rail failure scenarios.",
@@ -310,6 +310,6 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "M
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate RelayZero Technical Report PDF")
     parser.add_argument("--output", default="RelayZero_Report.pdf", help="Output PDF filename")
-    parser.add_argument("--team-name", default="MetaMask", help="Team name for report header")
+    parser.add_argument("--team-name", default="RelayZero Labs", help="Team name for report header")
     args = parser.parse_args()
     build_pdf(output_filename=args.output, team_name=args.team_name)

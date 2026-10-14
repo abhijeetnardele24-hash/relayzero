@@ -7,7 +7,7 @@
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-brightgreen.svg)](https://www.python.org/)
 [![Model](https://img.shields.io/badge/Model-Apertus--v1.5--8B-orange.svg)](https://huggingface.co/swiss-ai/Apertus-v1.5-8B)
 [![Egress](https://img.shields.io/badge/Deployment-Air--Gap_Capable-success.svg)](track_2b/src/backend/tests/test_egress.py)
-[![Coverage](https://img.shields.io/badge/Coverage-88.35%25-green.svg)](track_2b/src/backend/tests/)
+[![Coverage](https://img.shields.io/badge/Coverage-93.53%25-green.svg)](track_2b/src/backend/tests/)
 
 ---
 
@@ -117,8 +117,8 @@ We benchmarked three executable systems on our curated 24-incident multi-source 
 3. **RelayZero Multi-Stage Evidence Pipeline (Ours)**
 
 > **Transparency Notice:**  
-> *Operational Status: Engineering-complete; live Apertus verification pending.*  
-> All metrics below are calculated dynamically from executable pipeline predictions over the 24 distinct gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `9a39e80d5ac1f9372dca6b752384e42147748c81`.
+> *Operational Status: Live Apertus integration verified; full deterministic benchmark remains fixture-based.*  
+> All metrics below are calculated dynamically from executable pipeline predictions over the 24 distinct gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `32f540b4ab5664e94364537024383868c0af1589`.
 
 | Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage (Ours) | Delta vs Single-Pass |
 | :--- | :---: | :---: | :---: | :---: |

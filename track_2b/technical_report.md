@@ -4,7 +4,7 @@
 
 - **Track:** Track 2B — Own Project
 - **Event:** Hack Apertus 2026 (Online)
-- **Team:** MetaMask (Solo participation)
+- **Team:** RelayZero Labs (Solo participation: Abhijeet Nardele)
 - **Repository:** https://github.com/abhijeetnardele24-hash/relayzero
 - **Demo:** [Demo Video Link — 2-minute walkthrough placeholder](https://github.com/abhijeetnardele24-hash/relayzero#demo-video)
 - **Model:** `swiss-ai/Apertus-v1.5-8B`
@@ -108,8 +108,8 @@ We conducted an empirical benchmark comparing three executable systems across th
 3. **RelayZero Multi-Stage Evidence Pipeline**
 
 > **Transparency Disclosure:**  
-> *Operational Status: Engineering-complete; live Apertus verification pending.*  
-> The metrics below reflect reproducible evaluation execution across the 24 gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `9a39e80d5ac1f9372dca6b752384e42147748c81`.
+> *Operational Status: Live Apertus integration verified; full deterministic benchmark remains fixture-based.*  
+> The metrics below reflect reproducible evaluation execution across the 24 gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `32f540b4ab5664e94364537024383868c0af1589`.
 
 ### Quantitative Results
 
@@ -147,7 +147,7 @@ We conducted an empirical benchmark comparing three executable systems across th
 ## 7. Reproducibility
 
 - **Primary Command:** `make run` from repository root.
-- **Backend Test Suite:** `pytest track_2b/src/backend/tests -v --cov=track_2b/src/backend --cov-fail-under=85` (Baseline verified coverage: **88.35%**, current test suite: **91.36%**).
+- **Backend Test Suite:** `pytest track_2b/src/backend/tests -v --cov=track_2b/src/backend --cov-fail-under=85` (36 passing automated tests with **93.53%** verified backend coverage).
 - **Benchmark Command:** `python track_2b/src/backend/evaluation_runner.py` (Reproduces `evaluation_metrics.json` and prediction artifacts).
 - **Bundle Verification:** `python -m track_2b.src.backend.verify_bundle <bundle.json>`.
 - **E2E & Accessibility:** Playwright test suite with Axe accessibility scan across 6 viewports (320px–1920px) with 0 horizontal overflow.
@@ -157,7 +157,7 @@ We conducted an empirical benchmark comparing three executable systems across th
 ## 8. Alignment with Judging Criteria
 
 1. **Purposeful Use of AI:** Apertus is used where LLMs excel—cross-lingual understanding and structured slot extraction—while deterministic logic handles safety-critical conflict resolution and evidence validation.
-2. **Technical Rigour:** 88.35% automated backend test coverage baseline (current suite achieves 91.36%, exceeding 85% requirement), strict Pydantic v2 schemas, SHA-256 audit chaining, and exact evidence quote validation.
+2. **Technical Rigour:** 36 passing automated tests with 93.53% backend coverage (exceeding 85% requirement), strict Pydantic v2 schemas, SHA-256 audit chaining, and exact evidence quote validation.
 3. **Value, Cost & Scalability:** Avoids recurring external per-token API fees via local weights; operational hardware and maintenance costs apply.
 4. **Sovereign Deployability:** Designed for air-gapped operations with monitored egress; supports deployments under Swiss data-residency and governance requirements, subject to deployment-specific legal review.
 5. **Implementation Feasibility:** Working end-to-end interface demonstrated across Swiss emergency scenarios.

@@ -3,8 +3,7 @@
 RelayZero evaluates factual extraction, cross-source reconciliation, contradiction detection, and hallucination suppression across a curated, multi-source benchmark of 24 emergency incidents in German, French, Italian, and English.
 
 > **Status Notice:**  
-> *Deterministic engineering regression tests.*  
-> *Live Apertus evaluation pending endpoint access.*  
+> *Operational Status: Live Apertus integration verified; full deterministic benchmark remains fixture-based.*  
 > All benchmark results below are calculated on the 24 multi-source test cases using the decoupled inputs (`track_2b/data/evaluation_inputs.jsonl`) and scored against gold annotations (`track_2b/data/evaluation_gold.jsonl`) after inference. Prediction runners have zero access to gold labels.
 
 ---

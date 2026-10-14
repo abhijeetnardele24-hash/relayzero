@@ -1,0 +1,291 @@
+{
+  "benchmark_type": "Controlled Live Apertus Integration Smoke Test",
+  "status": "Live Apertus integration verified; full deterministic benchmark remains fixture-based.",
+  "executed_at": "2026-10-14T07:39:08.635818+00:00",
+  "model_identifier": "swiss-ai/apertus-v1.5-8b",
+  "endpoint_host": "https://api.publicai.co",
+  "evaluated_code_sha": "32f540b4ab5664e94364537024383868c0af1589",
+  "sample_count": 3,
+  "total_latency_ms": 90899.44,
+  "average_latency_ms": 30299.81,
+  "token_usage_aggregate": {
+    "prompt_tokens": 1016,
+    "completion_tokens": 1716,
+    "total_tokens": 2732
+  },
+  "records": [
+    {
+      "model_identifier": "swiss-ai/apertus-v1.5-8b",
+      "model_revision": "v1.5-8b-instruct",
+      "endpoint_type": "openai_compatible_chat_v1",
+      "endpoint_base": "https://api.publicai.co",
+      "timestamp": "2026-10-14T07:38:10.455441+00:00",
+      "prompt_version": "v1.2-airgap-strict",
+      "schema_version": "v1.0-evidence-grounded",
+      "request_hash_sha256": "d1545836bd7ff522ff3a6eaee855cba29d5b801dce615d50dad316e8afdad155",
+      "raw_response_sanitized": "{\n  \"claims\": [\n    {\n      \"field\": \"incident_type\",\n      \"normalized_value\": \"Rauchentwicklung\",\n      \"original_value\": \"Starke Rauchentwicklung\",\n      \"exact_quote\": \"Starke Rauchentwicklung\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"location_primary\",\n      \"normalized_value\": \"Gotthard-Strassentunnel\",\n      \"original_value\": \"Gotthard-Strassentunnel\",\n      \"exact_quote\": \"Gotthard-Strassentunnel\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"location_detail\",\n      \"normalized_value\": \"ca. 500m nach dem Nordportal Göschenen\",\n      \"original_value\": \"ca. 500m nach dem Nordportal Göschenen\",\n      \"exact_quote\": \"ca. 500m nach dem Nordportal Göschenen\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"time_occurred\",\n      \"normalized_value\": \"14:05 Uhr\",\n      \"original_value\": \"um 14:05 Uhr\",\n      \"exact_quote\": \"um 14:05 Uhr\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"casualty_count\",\n      \"normalized_value\": \"unbekannt\",\n      \"original_value\": \"nicht angegeben\",\n      \"exact_quote\": \"nicht angegeben\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"affected_count\",\n      \"normalized_value\": \"unbekannt\",\n      \"original_value\": \"nicht angegeben\",\n      \"exact_quote\": \"nicht angegeben\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"hazard_status\",\n      \"normalized_value\": \"aktiv\",\n      \"original_value\": \"Tunnel gesperrt\",\n      \"exact_quote\": \"Tunnel gesperrt\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"infrastructure_impact\",\n      \"normalized_value\": \"gesperrt\",\n      \"original_value\": \"Tunnel gesperrt\",\n      \"exact_quote\": \"Tunnel gesperrt\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"action_required\",\n      \"normalized_value\": \"Tunnel sperren\",\n      \"original_value\": \"Tunnel gesperrt\",\n      \"exact_quote\": \"Tunnel gesperrt\",\n      \"confidence\": 0.95\n    }\n  ]\n}",
+      "parsed_structured_output": {
+        "claims": [
+          {
+            "field": "incident_type",
+            "normalized_value": "Rauchentwicklung",
+            "original_value": "Starke Rauchentwicklung",
+            "exact_quote": "Starke Rauchentwicklung",
+            "confidence": 0.95
+          },
+          {
+            "field": "location_primary",
+            "normalized_value": "Gotthard-Strassentunnel",
+            "original_value": "Gotthard-Strassentunnel",
+            "exact_quote": "Gotthard-Strassentunnel",
+            "confidence": 0.95
+          },
+          {
+            "field": "location_detail",
+            "normalized_value": "ca. 500m nach dem Nordportal Göschenen",
+            "original_value": "ca. 500m nach dem Nordportal Göschenen",
+            "exact_quote": "ca. 500m nach dem Nordportal Göschenen",
+            "confidence": 0.95
+          },
+          {
+            "field": "time_occurred",
+            "normalized_value": "14:05 Uhr",
+            "original_value": "um 14:05 Uhr",
+            "exact_quote": "um 14:05 Uhr",
+            "confidence": 0.95
+          },
+          {
+            "field": "casualty_count",
+            "normalized_value": "unbekannt",
+            "original_value": "nicht angegeben",
+            "exact_quote": "nicht angegeben",
+            "confidence": 0.95
+          },
+          {
+            "field": "affected_count",
+            "normalized_value": "unbekannt",
+            "original_value": "nicht angegeben",
+            "exact_quote": "nicht angegeben",
+            "confidence": 0.95
+          },
+          {
+            "field": "hazard_status",
+            "normalized_value": "aktiv",
+            "original_value": "Tunnel gesperrt",
+            "exact_quote": "Tunnel gesperrt",
+            "confidence": 0.95
+          },
+          {
+            "field": "infrastructure_impact",
+            "normalized_value": "gesperrt",
+            "original_value": "Tunnel gesperrt",
+            "exact_quote": "Tunnel gesperrt",
+            "confidence": 0.95
+          },
+          {
+            "field": "action_required",
+            "normalized_value": "Tunnel sperren",
+            "original_value": "Tunnel gesperrt",
+            "exact_quote": "Tunnel gesperrt",
+            "confidence": 0.95
+          }
+        ]
+      },
+      "latency_ms": 32720.65,
+      "token_usage": {
+        "completion_tokens": 598,
+        "prompt_tokens": 345,
+        "total_tokens": 943
+      },
+      "validation_status": "valid_json_schema",
+      "app_mode": "live",
+      "evaluated_code_sha": "32f540b4ab5664e94364537024383868c0af1589",
+      "source_report_id": "SRC-DE-01",
+      "source_language": "de",
+      "source_modality": "text",
+      "source_incident_id": "EVAL-INC-001"
+    },
+    {
+      "model_identifier": "swiss-ai/apertus-v1.5-8b",
+      "model_revision": "v1.5-8b-instruct",
+      "endpoint_type": "openai_compatible_chat_v1",
+      "endpoint_base": "https://api.publicai.co",
+      "timestamp": "2026-10-14T07:38:39.432427+00:00",
+      "prompt_version": "v1.2-airgap-strict",
+      "schema_version": "v1.0-evidence-grounded",
+      "request_hash_sha256": "bf0e05b2ba191139680a2e61ed372470236dc07bfb08f31226bd571a695cce47",
+      "raw_response_sanitized": "{\n  \"claims\": [\n    {\n      \"field\": \"incident_type\",\n      \"normalized_value\": \"inondation soudaine\",\n      \"original_value\": \"Crue subite\",\n      \"exact_quote\": \"Crue subite\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"location_primary\",\n      \"normalized_value\": \"Sion\",\n      \"original_value\": \"Sion\",\n      \"exact_quote\": \"Sion\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"location_detail\",\n      \"normalized_value\": \"Gymnase des Collines\",\n      \"original_value\": \"Gymnase des Collines\",\n      \"exact_quote\": \"Gymnase des Collines\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"time_occurred\",\n      \"normalized_value\": \"non spécifié\",\n      \"original_value\": \"non spécifié\",\n      \"exact_quote\": \"non spécifié\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"casualty_count\",\n      \"normalized_value\": \"non spécifié\",\n      \"original_value\": \"non spécifié\",\n      \"exact_quote\": \"non spécifié\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"affected_count\",\n      \"normalized_value\": \"150\",\n      \"original_value\": \"150\",\n      \"exact_quote\": \"150\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"hazard_status\",\n      \"normalized_value\": \"en cours\",\n      \"original_value\": \"en cours\",\n      \"exact_quote\": \"en cours\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"infrastructure_impact\",\n      \"normalized_value\": \"utilisation d'un bâtiment comme abri\",\n      \"original_value\": \"ouvert comme abri d'urgence\",\n      \"exact_quote\": \"ouvert comme abri d'urgence\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"action_required\",\n      \"normalized_value\": \"accueil des personnes évacuées\",\n      \"original_value\": \"accueillies\",\n      \"exact_quote\": \"accueillies\",\n      \"confidence\": 0.9\n    }\n  ]\n}",
+      "parsed_structured_output": {
+        "claims": [
+          {
+            "field": "incident_type",
+            "normalized_value": "inondation soudaine",
+            "original_value": "Crue subite",
+            "exact_quote": "Crue subite",
+            "confidence": 0.95
+          },
+          {
+            "field": "location_primary",
+            "normalized_value": "Sion",
+            "original_value": "Sion",
+            "exact_quote": "Sion",
+            "confidence": 0.95
+          },
+          {
+            "field": "location_detail",
+            "normalized_value": "Gymnase des Collines",
+            "original_value": "Gymnase des Collines",
+            "exact_quote": "Gymnase des Collines",
+            "confidence": 0.95
+          },
+          {
+            "field": "time_occurred",
+            "normalized_value": "non spécifié",
+            "original_value": "non spécifié",
+            "exact_quote": "non spécifié",
+            "confidence": 0.95
+          },
+          {
+            "field": "casualty_count",
+            "normalized_value": "non spécifié",
+            "original_value": "non spécifié",
+            "exact_quote": "non spécifié",
+            "confidence": 0.95
+          },
+          {
+            "field": "affected_count",
+            "normalized_value": "150",
+            "original_value": "150",
+            "exact_quote": "150",
+            "confidence": 0.95
+          },
+          {
+            "field": "hazard_status",
+            "normalized_value": "en cours",
+            "original_value": "en cours",
+            "exact_quote": "en cours",
+            "confidence": 0.95
+          },
+          {
+            "field": "infrastructure_impact",
+            "normalized_value": "utilisation d'un bâtiment comme abri",
+            "original_value": "ouvert comme abri d'urgence",
+            "exact_quote": "ouvert comme abri d'urgence",
+            "confidence": 0.95
+          },
+          {
+            "field": "action_required",
+            "normalized_value": "accueil des personnes évacuées",
+            "original_value": "accueillies",
+            "exact_quote": "accueillies",
+            "confidence": 0.9
+          }
+        ]
+      },
+      "latency_ms": 28976.32,
+      "token_usage": {
+        "completion_tokens": 553,
+        "prompt_tokens": 335,
+        "total_tokens": 888
+      },
+      "validation_status": "valid_json_schema",
+      "app_mode": "live",
+      "evaluated_code_sha": "32f540b4ab5664e94364537024383868c0af1589",
+      "source_report_id": "SRC-FR-04",
+      "source_language": "fr",
+      "source_modality": "text",
+      "source_incident_id": "EVAL-INC-002"
+    },
+    {
+      "model_identifier": "swiss-ai/apertus-v1.5-8b",
+      "model_revision": "v1.5-8b-instruct",
+      "endpoint_type": "openai_compatible_chat_v1",
+      "endpoint_base": "https://api.publicai.co",
+      "timestamp": "2026-10-14T07:39:08.634911+00:00",
+      "prompt_version": "v1.2-airgap-strict",
+      "schema_version": "v1.0-evidence-grounded",
+      "request_hash_sha256": "4e410fa30dc4b016b41e9a9e74b3520e9f5ebd8b3dbce970e6fd1852e8048f2d",
+      "raw_response_sanitized": "{\n  \"claims\": [\n    {\n      \"field\": \"incident_type\",\n      \"normalized_value\": \"traffic incident / emergency\",\n      \"original_value\": \"Chiamata di emergenza\",\n      \"exact_quote\": \"Chiamata di emergenza\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"location_primary\",\n      \"normalized_value\": \"San Gottardo tunnel\",\n      \"original_value\": \"galleria del San Gottardo\",\n      \"exact_quote\": \"galleria del San Gottardo\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"location_detail\",\n      \"normalized_value\": \"nicchia 4\",\n      \"original_value\": \"nicchia 4\",\n      \"exact_quote\": \"nicchia 4\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"time_occurred\",\n      \"normalized_value\": \"not provided\",\n      \"original_value\": \"not provided\",\n      \"exact_quote\": \"not provided\",\n      \"confidence\": 0.0\n    },\n    {\n      \"field\": \"casualty_count\",\n      \"normalized_value\": \"not provided\",\n      \"original_value\": \"not provided\",\n      \"exact_quote\": \"not provided\",\n      \"confidence\": 0.0\n    },\n    {\n      \"field\": \"affected_count\",\n      \"normalized_value\": \"12\",\n      \"original_value\": \"12 persone\",\n      \"exact_quote\": \"12 persone\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"hazard_status\",\n      \"normalized_value\": \"dense smoke present\",\n      \"original_value\": \"fumo denso\",\n      \"exact_quote\": \"fumo denso\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"infrastructure_impact\",\n      \"normalized_value\": \"blocked / trapped inside tunnel\",\n      \"original_value\": \"siamo bloccati nella galleria\",\n      \"exact_quote\": \"siamo bloccati nella galleria\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"action_required\",\n      \"normalized_value\": \"emergency rescue / evacuation\",\n      \"original_value\": \"Chiamata di emergenza\",\n      \"exact_quote\": \"Chiamata di emergenza\",\n      \"confidence\": 0.95\n    }\n  ]\n}",
+      "parsed_structured_output": {
+        "claims": [
+          {
+            "field": "incident_type",
+            "normalized_value": "traffic incident / emergency",
+            "original_value": "Chiamata di emergenza",
+            "exact_quote": "Chiamata di emergenza",
+            "confidence": 0.95
+          },
+          {
+            "field": "location_primary",
+            "normalized_value": "San Gottardo tunnel",
+            "original_value": "galleria del San Gottardo",
+            "exact_quote": "galleria del San Gottardo",
+            "confidence": 0.95
+          },
+          {
+            "field": "location_detail",
+            "normalized_value": "nicchia 4",
+            "original_value": "nicchia 4",
+            "exact_quote": "nicchia 4",
+            "confidence": 0.95
+          },
+          {
+            "field": "time_occurred",
+            "normalized_value": "not provided",
+            "original_value": "not provided",
+            "exact_quote": "not provided",
+            "confidence": 0.0
+          },
+          {
+            "field": "casualty_count",
+            "normalized_value": "not provided",
+            "original_value": "not provided",
+            "exact_quote": "not provided",
+            "confidence": 0.0
+          },
+          {
+            "field": "affected_count",
+            "normalized_value": "12",
+            "original_value": "12 persone",
+            "exact_quote": "12 persone",
+            "confidence": 0.95
+          },
+          {
+            "field": "hazard_status",
+            "normalized_value": "dense smoke present",
+            "original_value": "fumo denso",
+            "exact_quote": "fumo denso",
+            "confidence": 0.95
+          },
+          {
+            "field": "infrastructure_impact",
+            "normalized_value": "blocked / trapped inside tunnel",
+            "original_value": "siamo bloccati nella galleria",
+            "exact_quote": "siamo bloccati nella galleria",
+            "confidence": 0.95
+          },
+          {
+            "field": "action_required",
+            "normalized_value": "emergency rescue / evacuation",
+            "original_value": "Chiamata di emergenza",
+            "exact_quote": "Chiamata di emergenza",
+            "confidence": 0.95
+          }
+        ]
+      },
+      "latency_ms": 29202.47,
+      "token_usage": {
+        "completion_tokens": 565,
+        "prompt_tokens": 336,
+        "total_tokens": 901
+      },
+      "validation_status": "valid_json_schema",
+      "app_mode": "live",
+      "evaluated_code_sha": "32f540b4ab5664e94364537024383868c0af1589",
+      "source_report_id": "SRC-IT-03",
+      "source_language": "it",
+      "source_modality": "voice_transcript",
+      "source_incident_id": "EVAL-INC-001"
+    }
+  ]
+}

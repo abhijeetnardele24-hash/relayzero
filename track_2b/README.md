@@ -29,7 +29,7 @@
    - Architecture, Threat Model, Evaluation, Demo Script, and High-Resolution Screenshots.
 5. **Reproducibility:**
    - `make run`: Starts the project from clean checkout.
-   - `make test`: Runs automated test suite (baseline 88.35% coverage, current suite achieves 91.36%, `--cov-fail-under=85`).
+   - `make test`: Runs automated test suite (36 passing tests with **93.53%** verified backend coverage, `--cov-fail-under=85`).
    - `make eval`: Runs the evaluation benchmark (`python track_2b/src/backend/evaluation_runner.py`).
 
 ---

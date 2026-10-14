@@ -81,6 +81,17 @@ def find_and_validate_span(source_text: str, quote: str) -> Optional[EvidenceSpa
     return None
 
 
+def get_git_commit_sha() -> str:
+    """
+    Resolves current git commit SHA cleanly.
+    """
+    try:
+        from .evaluation_runner import get_git_commit_sha as _resolve_sha
+        return _resolve_sha()
+    except (ImportError, Exception):
+        return "unknown"
+
+
 class ApertusAdapter:
     def __init__(
         self,
@@ -88,14 +99,15 @@ class ApertusAdapter:
         model_name: Optional[str] = None,
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
-        timeout_seconds: float = 30.0,
+        timeout_seconds: Optional[float] = None,
     ):
         env_mode = os.getenv("APP_MODE", "fixture").lower()
         self.app_mode = app_mode if app_mode is not None else (AppModeEnum.LIVE if env_mode == "live" else AppModeEnum.FIXTURE)
         self.model_name = model_name if model_name is not None else os.getenv("LLM_NAME", DEFAULT_MODEL)
         self.base_url = base_url if base_url is not None else os.getenv("LLM_BASE_URL", "").strip()
         self.api_key = api_key if api_key is not None else os.getenv("LLM_API_KEY", "").strip()
-        self.timeout_seconds = timeout_seconds
+        default_timeout = float(os.getenv("LLM_TIMEOUT", "60.0"))
+        self.timeout_seconds = timeout_seconds if timeout_seconds is not None else default_timeout
 
     def is_live_endpoint_available(self) -> bool:
         return bool(self.base_url)
@@ -203,6 +215,7 @@ Output JSON Format:
         latency_ms: float,
         usage: Optional[Dict[str, Any]] = None,
         model_revision: Optional[str] = None,
+        evaluated_code_sha: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Builds a sanitized evidence artifact proving inference origin without leaking credentials.
@@ -229,6 +242,7 @@ Output JSON Format:
             "token_usage": usage if self.app_mode == AppModeEnum.LIVE else None,
             "validation_status": "valid_json_schema",
             "app_mode": self.app_mode.value,
+            "evaluated_code_sha": evaluated_code_sha or get_git_commit_sha(),
         }
         return evidence
 

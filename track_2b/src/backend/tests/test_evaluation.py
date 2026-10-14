@@ -256,26 +256,113 @@ def test_verify_bundle_cli_execution(monkeypatch, tmp_path):
 
 
 def test_documented_metrics_consistency():
-    """Asserts that documented headline metrics in technical documentation exactly match evaluation_metrics.json."""
-    metrics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "evaluation_metrics.json"))
+    """
+    Asserts that documented headline metrics, test counts, coverage, team name, model,
+    and status wording in technical documentation exactly match canonical machine-readable sources.
+    Fails immediately if documentation and evidence diverge.
+    """
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    metrics_path = os.path.join(base_dir, "track_2b", "data", "evaluation_metrics.json")
+    manifest_path = os.path.join(base_dir, "track_2b", "data", "evaluation_run_manifest.json")
+    smoke_path = os.path.join(base_dir, "track_2b", "data", "live_smoke_evidence.json")
+    handoff_path = os.path.join(base_dir, "track_2b", "docs", "SUBMISSION_HANDOFF.md")
+    tech_report_path = os.path.join(base_dir, "track_2b", "technical_report.md")
+    readme_path = os.path.join(base_dir, "README.md")
+    track_readme_path = os.path.join(base_dir, "track_2b", "README.md")
+    gen_pdf_path = os.path.join(base_dir, "track_2b", "generate_pdf.py")
+
+    # 1. Canonical Machine-Readable Metrics
     with open(metrics_path, "r", encoding="utf-8") as f:
         metrics_data = json.load(f)
 
+    sample_count = metrics_data["sample_count"]
+    assert sample_count == 24
+
+    regex_metrics = next(r for r in metrics_data["results"] if "Regex" in r["system_name"])
+    sp_metrics = next(r for r in metrics_data["results"] if "Single-Pass" in r["system_name"])
     rz_metrics = next(r for r in metrics_data["results"] if "RelayZero" in r["system_name"])
+
+    assert regex_metrics["field_f1_micro"] == 0.674
+    assert sp_metrics["field_f1_micro"] == 0.879
     assert rz_metrics["field_f1_micro"] == 0.793
     assert rz_metrics["field_f1_macro"] == 0.844
     assert rz_metrics["contradiction_f1"] == 1.0
     assert rz_metrics["contradiction_tp"] == 22
     assert rz_metrics["contradiction_gold_count"] == 22
+    assert rz_metrics["claim_recall_micro"] == 0.991
 
-    # Verify SUBMISSION_HANDOFF.md contains exact headline metrics
-    handoff_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "SUBMISSION_HANDOFF.md"))
-    if os.path.exists(handoff_path):
-        with open(handoff_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            assert "0.793" in content, "SUBMISSION_HANDOFF.md must cite exact RelayZero micro F1 (0.793)"
-            assert "0.844" in content, "SUBMISSION_HANDOFF.md must cite exact RelayZero macro F1 (0.844)"
-            assert "1.000" in content or "1.0" in content, "SUBMISSION_HANDOFF.md must cite contradiction F1"
+    # 2. Canonical Team & Status Wording
+    canonical_team = "RelayZero Labs"
+    canonical_status = "Live Apertus integration verified; full deterministic benchmark remains fixture-based."
+    canonical_coverage = "93.53%"
+    canonical_test_count = "36"
+
+    # 3. Check SUBMISSION_HANDOFF.md
+    with open(handoff_path, "r", encoding="utf-8") as f:
+        handoff_text = f.read()
+    assert canonical_team in handoff_text, f"SUBMISSION_HANDOFF.md must cite canonical team '{canonical_team}'"
+    assert canonical_status in handoff_text, "SUBMISSION_HANDOFF.md must cite canonical status wording"
+    assert canonical_coverage in handoff_text, f"SUBMISSION_HANDOFF.md must cite exact coverage '{canonical_coverage}'"
+    assert canonical_test_count in handoff_text, f"SUBMISSION_HANDOFF.md must cite exact test count '{canonical_test_count}'"
+    assert "0.793" in handoff_text
+    assert "0.844" in handoff_text
+    assert "0.674" in handoff_text
+    assert "0.879" in handoff_text
+    assert "22/22" in handoff_text
+
+    # 4. Check technical_report.md
+    with open(tech_report_path, "r", encoding="utf-8") as f:
+        report_text = f.read()
+    assert canonical_team in report_text, f"technical_report.md must cite canonical team '{canonical_team}'"
+    assert canonical_status in report_text, "technical_report.md must cite canonical status wording"
+    assert canonical_coverage in report_text, f"technical_report.md must cite exact coverage '{canonical_coverage}'"
+    assert canonical_test_count in report_text, f"technical_report.md must cite exact test count '{canonical_test_count}'"
+    assert "0.793" in report_text
+    assert "0.844" in report_text
+    assert "22/22" in report_text
+
+    # 5. Check root README.md
+    with open(readme_path, "r", encoding="utf-8") as f:
+        readme_text = f.read()
+    assert canonical_coverage in readme_text, f"README.md badge must cite exact coverage '{canonical_coverage}'"
+    assert canonical_status in readme_text, "README.md must cite canonical status wording"
+    assert "0.793" in readme_text
+
+    # 6. Check track_2b/README.md
+    with open(track_readme_path, "r", encoding="utf-8") as f:
+        t_readme_text = f.read()
+    assert canonical_coverage in t_readme_text
+    assert canonical_test_count in t_readme_text
+
+    # 7. Check generate_pdf.py
+    with open(gen_pdf_path, "r", encoding="utf-8") as f:
+        pdf_text = f.read()
+    assert canonical_team in pdf_text
+    assert canonical_coverage in pdf_text
+    assert canonical_test_count in pdf_text
+
+    # 8. Check Manifest
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest_data = json.load(f)
+    assert manifest_data["sample_count"] == 24
+    assert manifest_data["evidence_commit_sha"] is None
+    assert manifest_data["inputs_checksum_sha256"].startswith("aa470817")
+    assert manifest_data["gold_checksum_sha256"].startswith("4ff10733")
+
+    # 9. Check Model Names
+    canonical_model = "swiss-ai/Apertus-v1.5-8B"
+    assert canonical_model.lower() in handoff_text.lower()
+    assert canonical_model.lower() in report_text.lower()
+    assert canonical_model.lower() in readme_text.lower()
+
+    # 10. Check live smoke evidence file if present
+    if os.path.exists(smoke_path):
+        with open(smoke_path, "r", encoding="utf-8") as f:
+            smoke_data = json.load(f)
+        assert smoke_data["status"] == canonical_status
+        assert smoke_data["sample_count"] == 3
+        assert len(smoke_data["records"]) == 3
+        assert "swiss-ai/apertus-v1.5-8b" in smoke_data["model_identifier"].lower()
 
 
 
