@@ -1255,6 +1255,7 @@ def get_git_commit_sha() -> str:
 # ==============================================================================
 async def execute_full_benchmark_run(
     adapter: Optional[ApertusAdapter] = None,
+    write_artifacts: bool = True,
 ) -> Dict[str, Any]:
     adapter = adapter or ApertusAdapter()
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -1325,33 +1326,34 @@ async def execute_full_benchmark_run(
         ],
     }
 
-    with open(METRICS_FILE, "w", encoding="utf-8") as f_m:
-        json.dump(output_summary, f_m, indent=2, ensure_ascii=False)
+    if write_artifacts:
+        with open(METRICS_FILE, "w", encoding="utf-8") as f_m:
+            json.dump(output_summary, f_m, indent=2, ensure_ascii=False)
 
-    # 6. Write Run Manifest with evaluated_code_sha and checksums
-    git_sha = get_git_commit_sha()
-    with open(INPUTS_FILE, "rb") as f_in_b:
-        inputs_checksum = hashlib.sha256(f_in_b.read()).hexdigest()
-    with open(GOLD_FILE, "rb") as f_gold_b:
-        gold_checksum = hashlib.sha256(f_gold_b.read()).hexdigest()
+        # 6. Write Run Manifest with evaluated_code_sha and checksums
+        git_sha = get_git_commit_sha()
+        with open(INPUTS_FILE, "rb") as f_in_b:
+            inputs_checksum = hashlib.sha256(f_in_b.read()).hexdigest()
+        with open(GOLD_FILE, "rb") as f_gold_b:
+            gold_checksum = hashlib.sha256(f_gold_b.read()).hexdigest()
 
-    manifest = {
-        "execution_timestamp": datetime.now(timezone.utc).isoformat(),
-        "evaluated_code_sha": git_sha,
-        "evidence_commit_sha": None,  # Synchronized when evidence artifacts are committed
-        "git_dirty": False,
-        "sample_count": len(inputs_list),
-        "inputs_checksum_sha256": inputs_checksum,
-        "gold_checksum_sha256": gold_checksum,
-        "command_used": "python -m track_2b.src.backend.evaluation_runner",
-        "app_mode": adapter.app_mode.value,
-        "model_configured": adapter.get_effective_model_identifier(),
-        "endpoint_configured": adapter.is_live_endpoint_available(),
-        "provenance_note": "evaluated_code_sha records the exact commit of the executing code; evidence_commit_sha is created when committing the generated benchmark artifacts.",
-    }
+        manifest = {
+            "execution_timestamp": datetime.now(timezone.utc).isoformat(),
+            "evaluated_code_sha": git_sha,
+            "evidence_commit_sha": None,  # Synchronized when evidence artifacts are committed
+            "git_dirty": False,
+            "sample_count": len(inputs_list),
+            "inputs_checksum_sha256": inputs_checksum,
+            "gold_checksum_sha256": gold_checksum,
+            "command_used": "python -m track_2b.src.backend.evaluation_runner",
+            "app_mode": adapter.app_mode.value,
+            "model_configured": adapter.get_effective_model_identifier(),
+            "endpoint_configured": adapter.is_live_endpoint_available(),
+            "provenance_note": "evaluated_code_sha records the exact commit of the executing code; evidence_commit_sha is created when committing the generated benchmark artifacts.",
+        }
 
-    with open(MANIFEST_FILE, "w", encoding="utf-8") as f_man:
-        json.dump(manifest, f_man, indent=2, ensure_ascii=False)
+        with open(MANIFEST_FILE, "w", encoding="utf-8") as f_man:
+            json.dump(manifest, f_man, indent=2, ensure_ascii=False)
 
     return output_summary
 
