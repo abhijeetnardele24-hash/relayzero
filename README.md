@@ -248,8 +248,8 @@ relayzero/
 
 ## 📹 Demo Video
 
-> **[Demo Video URL Placeholder — To be recorded and updated by Lead Assistant]**  
-> Storyboard and narration transcript available at [docs/DEMO_SCRIPT.md](track_2b/docs/DEMO_SCRIPT.md).
+> **[Watch the 1:42 RelayZero Hack Apertus demo](https://youtu.be/YoXeo-TnTsg)**
+> The walkthrough uses the clearly labeled deterministic fixture for smooth pacing; reproducible live Apertus evidence is committed at [`track_2b/data/live_smoke_evidence.json`](track_2b/data/live_smoke_evidence.json). Storyboard and narration transcript are available at [docs/DEMO_SCRIPT.md](track_2b/docs/DEMO_SCRIPT.md).
 
 ---
 

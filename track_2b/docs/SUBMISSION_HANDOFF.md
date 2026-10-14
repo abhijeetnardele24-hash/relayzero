@@ -21,7 +21,7 @@ http://hackapertus.ch/online-hack/submissions
 | **Primary Launch Command** | `make run` (from clean checkout) |
 | **Technical Report File** | `track_2b/RelayZero_Report.pdf` (strictly 4 pages, within official 6-page limit) |
 | **Evaluation Dataset Files** | Separated strictly: `track_2b/data/evaluation_inputs.jsonl` (prediction inputs) and `track_2b/data/evaluation_gold.jsonl` (scoring only). Deprecated combined `evaluation_dataset.json` has been permanently deleted. (CDLA-Permissive-2.0, synthetic emergency operations benchmark, 24 genuinely distinct multi-source incidents across Switzerland in DE/FR/IT/EN) |
-| **Demo Video URL** | `[To be recorded and attached by Lead Assistant]` |
+| **Demo Video URL** | `https://youtu.be/YoXeo-TnTsg` (Unlisted, 1:42, checks passed) |
 | **Licensing** | Source Code: `Apache-2.0` \| Documentation: `CC-BY-4.0` \| Data: `CDLA-Permissive-2.0` |
 
 ---

@@ -6,7 +6,7 @@
 - **Event:** Hack Apertus 2026 (Online)
 - **Team:** RelayZero Labs (Solo participation: Abhijeet Nardele)
 - **Repository:** https://github.com/abhijeetnardele24-hash/relayzero
-- **Demo:** [Demo Video Link — 2-minute walkthrough placeholder](https://github.com/abhijeetnardele24-hash/relayzero#demo-video)
+- **Demo:** [RelayZero — Sovereign Multilingual Incident Intelligence (1:42)](https://youtu.be/YoXeo-TnTsg)
 - **Model:** `swiss-ai/Apertus-v1.5-8B`
 
 ---
