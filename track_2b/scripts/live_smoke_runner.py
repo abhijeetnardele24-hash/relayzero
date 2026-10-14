@@ -127,7 +127,7 @@ async def run_live_smoke() -> Dict[str, Any]:
 
     summary_artifact = {
         "benchmark_type": "Controlled Live Apertus Integration Smoke Test",
-        "status": "Live Apertus integration verified; full deterministic benchmark remains fixture-based.",
+        "status": "Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based.",
         "executed_at": datetime.now(timezone.utc).isoformat(),
         "model_identifier": adapter.get_effective_model_identifier(),
         "endpoint_host": adapter.generate_sanitized_evidence("", "", {}, 0)["endpoint_base"],

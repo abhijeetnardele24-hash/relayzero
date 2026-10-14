@@ -117,7 +117,7 @@ We benchmarked three executable systems on our curated 24-incident multi-source 
 3. **RelayZero Multi-Stage Evidence Pipeline (Ours)**
 
 > **Transparency Notice:**  
-> *Operational Status: Live Apertus integration verified; full deterministic benchmark remains fixture-based.*  
+> *Operational Status: Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based.*  
 > All metrics below are calculated dynamically from executable pipeline predictions over the 24 distinct gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `32f540b4ab5664e94364537024383868c0af1589`.
 
 | Metric | Regex Baseline | Single-Pass Baseline | RelayZero Multi-Stage (Ours) | Delta vs Single-Pass |
@@ -133,7 +133,9 @@ We benchmarked three executable systems on our curated 24-incident multi-source 
 | **Missing-Field Abstention Accuracy** | 100.0% (35/35) | 100.0% (35/35) | **100.0% (35/35)** | 0.0% |
 | **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** | 0.0% |
 | **Prompt Injection Containment** | 100.0% (2/2) | 100.0% (2/2) | **100.0% (2/2)** | 0.0% |
-| **Deterministic Latency** | 0.33 ms | 0.37 ms | **0.35 ms** | -0.02 ms |
+| **Reconciliation Latency** | <1 ms | <1 ms | **<1 ms** | ~0 ms |
+
+*Note: <1 ms deterministic reconciliation/post-processing on the recorded local run; Apertus model inference measured approximately 30.3 seconds average through the Public AI endpoint (exact individual values recorded in `evaluation_metrics.json`).*
 
 ---
 

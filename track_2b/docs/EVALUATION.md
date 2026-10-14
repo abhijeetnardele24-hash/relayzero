@@ -3,7 +3,7 @@
 RelayZero evaluates factual extraction, cross-source reconciliation, contradiction detection, and hallucination suppression across a curated, multi-source benchmark of 24 emergency incidents in German, French, Italian, and English.
 
 > **Status Notice:**  
-> *Operational Status: Live Apertus integration verified; full deterministic benchmark remains fixture-based.*  
+> *Operational Status: Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based.*  
 > All benchmark results below are calculated on the 24 multi-source test cases using the decoupled inputs (`track_2b/data/evaluation_inputs.jsonl`) and scored against gold annotations (`track_2b/data/evaluation_gold.jsonl`) after inference. Prediction runners have zero access to gold labels.
 
 ---
@@ -28,7 +28,9 @@ Run manifest: [`evaluation_run_manifest.json`](../data/evaluation_run_manifest.j
 | **Missing-Field Abstention Accuracy** | 100.0% (35/35) | 100.0% (35/35) | **100.0% (35/35)** | 0.0% |
 | **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** | 0.0% |
 | **Prompt Injection Containment** | 100.0% (2/2) | 100.0% (2/2) | **100.0% (2/2)** | 0.0% |
-| **Deterministic Latency** | 0.33 ms | 0.37 ms | **0.35 ms** | -0.02 ms |
+| **Reconciliation Latency** | <1 ms | <1 ms | **<1 ms** | ~0 ms |
+
+*Note: <1 ms deterministic reconciliation/post-processing on the recorded local run; Apertus model inference measured approximately 30.3 seconds average through the Public AI endpoint (exact individual values recorded in `evaluation_metrics.json`).*
 
 ---
 

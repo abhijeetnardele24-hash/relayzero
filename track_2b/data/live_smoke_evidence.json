@@ -1,6 +1,6 @@
 {
   "benchmark_type": "Controlled Live Apertus Integration Smoke Test",
-  "status": "Live Apertus integration verified; full deterministic benchmark remains fixture-based.",
+  "status": "Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based.",
   "executed_at": "2026-10-14T07:39:08.635818+00:00",
   "model_identifier": "swiss-ai/apertus-v1.5-8b",
   "endpoint_host": "https://api.publicai.co",

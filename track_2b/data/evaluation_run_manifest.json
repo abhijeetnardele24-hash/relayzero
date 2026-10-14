@@ -10,5 +10,5 @@
   "app_mode": "fixture",
   "model_configured": "Synthetic Demo Fixture",
   "endpoint_configured": true,
-  "provenance_note": "evaluated_code_sha records the exact commit of the executing code; evidence_commit_sha is created when committing the generated benchmark artifacts."
+  "provenance_note": "evaluated_code_sha identifies the exact executed code. evidence_commit_sha is intentionally null because a file cannot contain the hash of the commit that contains itself; the final evidence commit is reported externally through Git history and the CI run URL."
 }

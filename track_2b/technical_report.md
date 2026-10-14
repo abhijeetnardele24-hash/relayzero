@@ -108,7 +108,7 @@ We conducted an empirical benchmark comparing three executable systems across th
 3. **RelayZero Multi-Stage Evidence Pipeline**
 
 > **Transparency Disclosure:**  
-> *Operational Status: Live Apertus integration verified; full deterministic benchmark remains fixture-based.*  
+> *Operational Status: Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based.*  
 > The metrics below reflect reproducible evaluation execution across the 24 gold standard cases (`track_2b/data/evaluation_metrics.json`), tracking evaluated code SHA `32f540b4ab5664e94364537024383868c0af1589`.
 
 ### Quantitative Results
@@ -126,7 +126,9 @@ We conducted an empirical benchmark comparing three executable systems across th
 | **Missing-Field Abstention Accuracy** | 100.0% (35/35) | 100.0% (35/35) | **100.0% (35/35)** | 0.0% |
 | **Unsupported Claim Rate** | 0.0% | 0.0% | **0.0%** | 0.0% |
 | **Prompt Injection Containment** | 100.0% (2/2) | 100.0% (2/2) | **100.0% (2/2)** | 0.0% |
-| **Deterministic Pipeline Latency** | 0.33 ms | 0.37 ms | **0.35 ms** | -0.02 ms |
+| **Reconciliation Latency** | <1 ms | <1 ms | **<1 ms** | ~0 ms |
+
+*Note: <1 ms deterministic reconciliation/post-processing on the recorded local run; Apertus model inference measured approximately 30.3 seconds average through the Public AI endpoint (exact individual values recorded in `evaluation_metrics.json`).*
 
 ### Evaluation Analysis
 - **Contradiction Handling:** Both the regex baseline and single-pass baseline completely fail to detect any contradictions (0.0% F1, 0/22 detected), creating dangerous false consensus. RelayZero achieves 100% precision and 100% recall (22/22 detected, 1.000 F1), isolating opposing field reports for human decision-making.

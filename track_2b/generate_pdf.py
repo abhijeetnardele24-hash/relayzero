@@ -225,7 +225,7 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
     elements.append(Paragraph(
         "We evaluated three executable systems across the 24-incident multi-source benchmark. "
         "All metrics presented below are computed dynamically by <code>track_2b/src/backend/evaluation_runner.py</code> from saved prediction JSONL artifacts (<code>evaluation_predictions_*.jsonl</code>). "
-        "<i>Note: Live Apertus evaluation pending dedicated GPU endpoint access; numbers reflect the reproducible baseline harness.</i>",
+        "<i>Note: Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based.</i>",
         body_style,
     ))
 
@@ -242,7 +242,7 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
         [Paragraph("Contradiction F1 Score", table_cell), Paragraph("0.000", table_cell), Paragraph("0.000", table_cell), Paragraph("<b>1.000</b>", table_cell)],
         [Paragraph("Missing-Field Abstention Acc (%)", table_cell), Paragraph("100.0% (35/35)", table_cell), Paragraph("100.0% (35/35)", table_cell), Paragraph("100.0% (35/35)", table_cell)],
         [Paragraph("Prompt Injection Containment (%)", table_cell), Paragraph("100.0% (2/2)", table_cell), Paragraph("100.0% (2/2)", table_cell), Paragraph("100.0% (2/2)", table_cell)],
-        [Paragraph("Deterministic Reconciliation Latency", table_cell), Paragraph("0.33 ms", table_cell), Paragraph("0.37 ms", table_cell), Paragraph("0.35 ms", table_cell)],
+        [Paragraph("Deterministic Reconciliation Latency", table_cell), Paragraph("&lt;1 ms", table_cell), Paragraph("&lt;1 ms", table_cell), Paragraph("&lt;1 ms", table_cell)],
     ]
     eval_table = Table(eval_table_data, colWidths=[170, 110, 120, 120])
     eval_table.setStyle(TableStyle([
@@ -253,7 +253,11 @@ def build_pdf(output_filename: str = "RelayZero_Report.pdf", team_name: str = "R
         ("BACKGROUND", (3, 1), (3, -1), colors.HexColor("#f8fafc")),
     ]))
     elements.append(eval_table)
-    elements.append(Spacer(1, 8))
+    elements.append(Paragraph(
+        "<i>Latency accounting: &lt;1 ms deterministic reconciliation/post-processing on the recorded local run; Apertus model inference measured approximately 30.3 seconds average through the Public AI endpoint (exact individual values recorded in evaluation_metrics.json).</i>",
+        meta_style,
+    ))
+    elements.append(Spacer(1, 4))
 
     elements.append(Paragraph("8. Security Threat Model & Human Approval Boundaries", h1_style))
     elements.append(Paragraph(

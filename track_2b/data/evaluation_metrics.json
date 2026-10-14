@@ -3,7 +3,7 @@
   "sample_count": 24,
   "computed_at": "2026-10-14T07:47:28.795305+00:00",
   "app_mode": "fixture",
-  "note": "Deterministic engineering regression tests (Live Apertus evaluation pending endpoint access)",
+  "note": "Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based.",
   "results": [
     {
       "system_name": "Regex / Keyword Baseline",

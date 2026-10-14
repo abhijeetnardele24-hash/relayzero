@@ -293,9 +293,12 @@ def test_documented_metrics_consistency():
 
     # 2. Canonical Team & Status Wording
     canonical_team = "RelayZero Labs"
-    canonical_status = "Live Apertus integration verified; full deterministic benchmark remains fixture-based."
+    canonical_status = "Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based."
     canonical_coverage = "93.53%"
     canonical_test_count = "36"
+
+    # Canonical evaluation metrics note
+    assert metrics_data["note"] == canonical_status
 
     # 3. Check SUBMISSION_HANDOFF.md
     with open(handoff_path, "r", encoding="utf-8") as f:
@@ -348,6 +351,8 @@ def test_documented_metrics_consistency():
     assert manifest_data["evidence_commit_sha"] is None
     assert manifest_data["inputs_checksum_sha256"].startswith("aa470817") or manifest_data["inputs_checksum_sha256"].startswith("c7487619")
     assert manifest_data["gold_checksum_sha256"].startswith("4ff10733") or manifest_data["gold_checksum_sha256"].startswith("bb36cc45")
+    assert "evidence_commit_sha is intentionally null" in manifest_data["provenance_note"]
+    assert "evaluated_code_sha identifies the exact executed code" in manifest_data["provenance_note"]
 
     # 9. Check Model Names
     canonical_model = "swiss-ai/Apertus-v1.5-8B"

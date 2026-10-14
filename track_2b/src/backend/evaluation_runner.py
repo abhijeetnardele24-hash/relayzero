@@ -1311,7 +1311,7 @@ async def execute_full_benchmark_run(
     if is_live:
         note = f"Evaluated live using {adapter.model_name}"
     else:
-        note = "Deterministic engineering regression tests (Live Apertus evaluation pending endpoint access)"
+        note = "Live Apertus integration verified through a three-report controlled smoke run; the 24-incident comparative benchmark remains deterministic fixture-based."
 
     output_summary = {
         "benchmark_title": "RelayZero Swiss Multilingual Multi-Source Evaluation Benchmark",
@@ -1340,7 +1340,7 @@ async def execute_full_benchmark_run(
         manifest = {
             "execution_timestamp": datetime.now(timezone.utc).isoformat(),
             "evaluated_code_sha": git_sha,
-            "evidence_commit_sha": None,  # Synchronized when evidence artifacts are committed
+            "evidence_commit_sha": None,  # Intentionally null; cannot self-reference commit hash
             "git_dirty": False,
             "sample_count": len(inputs_list),
             "inputs_checksum_sha256": inputs_checksum,
@@ -1349,7 +1349,12 @@ async def execute_full_benchmark_run(
             "app_mode": adapter.app_mode.value,
             "model_configured": adapter.get_effective_model_identifier(),
             "endpoint_configured": adapter.is_live_endpoint_available(),
-            "provenance_note": "evaluated_code_sha records the exact commit of the executing code; evidence_commit_sha is created when committing the generated benchmark artifacts.",
+            "provenance_note": (
+                "evaluated_code_sha identifies the exact executed code. "
+                "evidence_commit_sha is intentionally null because a file cannot contain the hash of "
+                "the commit that contains itself; the final evidence commit is reported externally "
+                "through Git history and the CI run URL."
+            ),
         }
 
         with open(MANIFEST_FILE, "w", encoding="utf-8") as f_man:
